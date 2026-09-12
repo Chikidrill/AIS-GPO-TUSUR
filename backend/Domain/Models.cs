@@ -27,8 +27,11 @@ public sealed class StudentProfile
     public long Id { get; set; }
     public long UserId { get; set; }
     public User User { get; set; } = null!;
+
+    public string? GroupNumber { get; set; }
     public string? About { get; set; }
     public string? Competencies { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
@@ -36,11 +39,19 @@ public sealed class StudentProfile
 public sealed class Project
 {
     public long Id { get; set; }
+
     public string Name { get; set; } = string.Empty;
+    public string Department { get; set; } = string.Empty;
     public string? Description { get; set; }
+
     public ProjectStatus Status { get; set; }
+
+    public long? SupervisorId { get; set; }
+    public User? Supervisor { get; set; }
+
     public long CreatedById { get; set; }
     public User CreatedBy { get; set; } = null!;
+
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }

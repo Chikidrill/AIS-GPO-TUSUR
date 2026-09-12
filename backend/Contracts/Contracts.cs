@@ -18,13 +18,26 @@ public sealed record CurrentUserResponse(long Id, string Email, string FullName,
 
 public sealed record CreateProjectRequest(
     [Required, MaxLength(255)] string Name,
-    [MaxLength(10000)] string? Description);
+    [Required, MaxLength(255)] string Department,
+    [MaxLength(10000)] string? Description,
+    long? SupervisorId);
 
-public sealed record ProjectResponse(long Id, string Name, string? Description, ProjectStatus Status);
+public sealed record ProjectResponse(
+    long Id,
+    string Name,
+    string Department,
+    string? Description,
+    ProjectStatus Status,
+    long? SupervisorId,
+    string? SupervisorName);
 
-public sealed record StudentProfileResponse(string? About, string? Competencies);
+public sealed record StudentProfileResponse(
+    string? GroupNumber,
+    string? About,
+    string? Competencies);
 
 public sealed record UpdateStudentProfileRequest(
+    [MaxLength(50)] string? GroupNumber,
     [MaxLength(4000)] string? About,
     [MaxLength(4000)] string? Competencies);
 

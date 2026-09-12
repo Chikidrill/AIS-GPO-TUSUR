@@ -35,6 +35,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.UserId).HasColumnName("user_id");
+            e.Property(x => x.GroupNumber)
+                .HasColumnName("group_number")
+                .HasMaxLength(50);
             e.Property(x => x.About).HasColumnName("about");
             e.Property(x => x.Competencies).HasColumnName("competencies");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
@@ -47,14 +50,48 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             e.ToTable("projects");
             e.HasKey(x => x.Id);
+
             e.Property(x => x.Id).HasColumnName("id");
-            e.Property(x => x.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
-            e.Property(x => x.Description).HasColumnName("description");
-            e.Property(x => x.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(30);
-            e.Property(x => x.CreatedById).HasColumnName("created_by");
-            e.Property(x => x.CreatedAt).HasColumnName("created_at");
-            e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
-            e.HasOne(x => x.CreatedBy).WithMany().HasForeignKey(x => x.CreatedById).OnDelete(DeleteBehavior.Restrict);
+
+            e.Property(x => x.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            e.Property(x => x.Department)
+                .HasColumnName("department")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            e.Property(x => x.Description)
+                .HasColumnName("description");
+
+            e.Property(x => x.Status)
+                .HasColumnName("status")
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            e.Property(x => x.SupervisorId)
+                .HasColumnName("supervisor_id");
+
+            e.Property(x => x.CreatedById)
+                .HasColumnName("created_by");
+
+            e.Property(x => x.CreatedAt)
+                .HasColumnName("created_at");
+
+            e.Property(x => x.UpdatedAt)
+                .HasColumnName("updated_at");
+
+            e.HasOne(x => x.Supervisor)
+                .WithMany()
+                .HasForeignKey(x => x.SupervisorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.CreatedBy)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         b.Entity<ParticipationApplication>(e =>

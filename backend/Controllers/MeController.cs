@@ -27,7 +27,10 @@ public sealed class MeController(AppDbContext db, ParticipationApplicationServic
     public async Task<ActionResult<StudentProfileResponse>> GetProfile(CancellationToken ct)
     {
         var profile = await db.StudentProfiles.AsNoTracking().SingleOrDefaultAsync(x => x.UserId == User.GetUserId(), ct);
-        return Ok(new StudentProfileResponse(profile?.About, profile?.Competencies));
+        return Ok(new StudentProfileResponse(
+            profile?.GroupNumber,
+            profile?.About,
+            profile?.Competencies));
     }
 
     [HttpPatch("profile")]
@@ -41,11 +44,15 @@ public sealed class MeController(AppDbContext db, ParticipationApplicationServic
             profile = new StudentProfile { UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
             db.StudentProfiles.Add(profile);
         }
+        profile.GroupNumber = request.GroupNumber?.Trim();
         profile.About = request.About;
         profile.Competencies = request.Competencies;
         profile.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
-        return Ok(new StudentProfileResponse(profile.About, profile.Competencies));
+        return Ok(new StudentProfileResponse(
+            profile.GroupNumber,
+            profile.About,
+            profile.Competencies));
     }
 
     [HttpGet("applications")]

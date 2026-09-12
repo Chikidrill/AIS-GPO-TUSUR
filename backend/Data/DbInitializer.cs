@@ -31,6 +31,23 @@ public static class DbInitializer
             db.Users.Add(admin);
         }
 
+        if (!await db.Users.AnyAsync(x => x.Email == "teacher@gpo.local"))
+        {
+            var teacher = new User
+            {
+                Email = "teacher@gpo.local",
+                FirstName = "Иван",
+                LastName = "Иванов",
+                MiddleName = "Иванович",
+                Role = UserRole.TEACHER,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+
+            teacher.PasswordHash = hasher.HashPassword(teacher, "Teacher123!");
+            db.Users.Add(teacher);
+        }
+
         if (!await db.Users.AnyAsync(x => x.Email == "student@gpo.local"))
         {
             var student = new User
