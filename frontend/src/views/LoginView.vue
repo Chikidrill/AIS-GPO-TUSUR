@@ -2,9 +2,8 @@
 import axios from 'axios'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-
+import AppHeader from '../components/AppHeader.vue'
 import { http } from '../api/http'
-import tusurLogo from '../assets/tusur_logo.svg'
 
 interface LoginResponse {
   accessToken: string
@@ -74,19 +73,7 @@ async function login() {
 
 <template>
   <div class="login-page">
-    <header class="login-header">
-      <img
-        class="login-header__logo"
-        :src="tusurLogo"
-        alt="ТУСУР"
-      >
-
-      <div class="login-header__divider" />
-
-      <div class="login-header__title">
-        Групповое проектное обучение
-      </div>
-    </header>
+    <AppHeader />
 
     <div class="login-brand-line" />
 
