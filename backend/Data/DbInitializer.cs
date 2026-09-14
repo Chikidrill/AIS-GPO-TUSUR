@@ -18,11 +18,11 @@ public static class DbInitializer
 
         if (!await db.Users.AnyAsync(x => x.Email == "admin@gpo.local"))
         {
-            var admin = new User
+          var admin = new User
             {
                 Email = "admin@gpo.local",
-                FirstName = "РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ",
-                LastName = "Р“РџРћ",
+                FirstName = "Администратор",
+                LastName = "ГПО",
                 Role = UserRole.ADMIN,
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow
@@ -50,11 +50,11 @@ public static class DbInitializer
 
         if (!await db.Users.AnyAsync(x => x.Email == "student@gpo.local"))
         {
-            var student = new User
+           var student = new User
             {
                 Email = "student@gpo.local",
-                FirstName = "РРІР°РЅ",
-                LastName = "РЎС‚СѓРґРµРЅС‚РѕРІ",
+                FirstName = "Иван",
+                LastName = "Студентов",
                 Role = UserRole.STUDENT,
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow
