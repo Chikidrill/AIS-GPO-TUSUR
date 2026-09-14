@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
 import tusurLogo from '../assets/tusur_logo.svg'
+import userIcon from '../assets/user_icon.svg'
 type UserRole = 'ADMIN' | 'STUDENT' | 'TEACHER'
 
 interface User{
@@ -34,17 +35,26 @@ const roleName = computed(() => {
 
 <template>
   <header class="app-header">
-    <img
-      class="app-header__logo"
-      :src="tusurLogo"
-      alt="ТУСУР"
-    >
+    <RouterLink
+        to="/projects"
+        class="app-header__brand"
+        >
+        <img
+            class="app-header__logo"
+            :src="tusurLogo"
+            alt="ТУСУР"
+        >
+
+        <div class="app-header__divider" />
+
+        <div class="app-header__title">
+            Групповое проектное обучение
+        </div>
+        </RouterLink>
 
     <div class="app-header__divider" />
 
-    <div class="app-header__title">
-      Групповое проектное обучение
-    </div>
+    
 
     <div class="app-header__spacer" />
 
@@ -57,9 +67,11 @@ const roleName = computed(() => {
         type="button"
         @click="menuOpen = !menuOpen"
       >
-        <div class="app-header__avatar">
-          {{ user.fullName.charAt(0) }}
-        </div>
+        <img
+            class="app-header__user-icon"
+            :src="userIcon"
+            alt=""
+            >
 
         <div class="app-header__user-text">
           <span class="app-header__user-name">

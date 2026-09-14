@@ -1,0 +1,189 @@
+.projects-page {
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.projects-content {
+  width: 100%;
+
+  padding:
+    44px
+    var(--page-padding)
+    56px;
+}
+
+.projects-content__header h1 {
+  margin: 0;
+
+  color: var(--color-text-primary);
+
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.projects-content__header p {
+  margin: 20px 0 0;
+
+  color: var(--color-text-secondary);
+
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.projects-toolbar {
+  display: grid;
+  grid-template-columns:
+    minmax(300px, 1fr)
+    225px
+    145px
+    130px;
+  gap: 12px;
+
+  margin-top: 28px;
+}
+
+.projects-search,
+.projects-filter {
+  height: 39px;
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+
+  background: var(--color-surface);
+
+  font-size: 9px;
+}
+
+.projects-search {
+  width: 100%;
+  padding: 0 16px;
+
+  color: var(--color-text-primary);
+}
+
+.projects-search::placeholder {
+  color: var(--color-text-muted);
+}
+
+.projects-search:focus {
+  border-color: var(--color-primary);
+}
+
+.projects-filter {
+  padding: 10px;
+
+  color: var(--color-text-control);
+
+  font-weight: 500;
+  text-align: left;
+}
+
+.projects-filter:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.projects-count {
+  margin: 28px 0 18px;
+
+  color: #6e7080;
+
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.projects-state {
+  padding: 70px 0;
+
+  color: var(--color-text-secondary);
+
+  font-size: 13px;
+  text-align: center;
+}
+
+.projects-state--error {
+  color: var(--color-error);
+}
+
+.projects-state--error p {
+  margin: 0 0 16px;
+}
+
+.projects-state--error button {
+  padding: 9px 14px;
+
+  border: 0;
+  border-radius: var(--radius-control);
+
+  background: var(--color-primary);
+  color: #fff;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@media (max-width: 1250px) {
+  .projects-content,
+  .projects-nav__inner {
+    padding-right: 48px;
+    padding-left: 48px;
+  }
+
+  .projects-toolbar {
+    grid-template-columns: 1fr 225px 145px;
+  }
+
+  .projects-filter--skills {
+    display: none;
+  }
+}
+
+@media (max-width: 950px) {
+  .projects-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .projects-toolbar {
+    grid-template-columns: 1fr 200px;
+  }
+
+  .projects-filter--department,
+  .projects-filter--skills {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .projects-nav__inner,
+  .projects-content {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+
+  .projects-content {
+    padding-top: 32px;
+  }
+
+  .projects-content__header h1 {
+    font-size: 24px;
+  }
+
+  .projects-toolbar {
+    display: block;
+  }
+
+  .projects-filter {
+    display: none;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -17,6 +17,15 @@ interface Project {
   name: string
   description: string | null
   status: ProjectStatus
+
+  // Поля, необходимые по макету
+  code?: string
+  department?: string
+  supervisorName?: string
+  direction?: string
+  competencies?: string[]
+  occupiedPlaces?: number
+  totalPlaces?: number
 }
 
 interface ApplicationResponse {
