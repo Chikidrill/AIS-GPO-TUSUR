@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref} from 'vue'
 import { useRouter } from 'vue-router'
 
 import { http } from '../api/http'

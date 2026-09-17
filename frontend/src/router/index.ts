@@ -42,10 +42,6 @@ router.beforeEach((to) => {
   if (to.meta.requiresAuth && !token) {
     return '/login'
   }
-
-  if (to.path === '/login' && token) {
-    return '/projects'
-  }
 })
 
 export default router
