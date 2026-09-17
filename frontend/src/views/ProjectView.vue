@@ -160,69 +160,96 @@ onMounted(() => {
     @logout="logout"
   >
     <div class="project-page">
-      <main class="project-content">
-        <RouterLink
-          to="/projects"
-          class="project-back"
-        >
-          ← К списку проектов
-        </RouterLink>
+  <main class="project-content">
+    <h1 class="project-title">
+      {{ project?.name }}
+    </h1>
 
-        <section
-          v-if="project"
-          class="project-details"
-        >
-          <div class="project-details__top">
-            <span class="project-details__code">
-              {{ project.code || `ПР${project.id}` }}
-            </span>
+    <div
+      v-if="project"
+      class="project-tags"
+    >
+      <span v-if="project.direction">
+        {{ project.direction }}
+      </span>
 
-            <span
-              v-if="
-                project.occupiedPlaces !== undefined &&
-                project.totalPlaces !== undefined
-              "
-              class="project-details__places"
-            >
-              {{ project.occupiedPlaces }} из {{ project.totalPlaces }} мест
-            </span>
-          </div>
+      <span
+        v-if="
+          project.occupiedPlaces !== undefined &&
+          project.totalPlaces !== undefined
+        "
+      >
+        {{ project.occupiedPlaces }} из {{ project.totalPlaces }} мест
+      </span>
 
-          <h1 class="project-details__title">
-            {{ project.name }}
-          </h1>
-
-          <p v-if="project.faculty">
-            {{ project.faculty }}
-          </p>
-
-          <p v-if="project.department">
-            {{ project.department }}
-          </p>
-
-          <p v-if="project.supervisorName">
-            Руководитель: {{ project.supervisorName }}
-          </p>
-
-          <p v-if="project.direction">
-            {{ project.direction }}
-          </p>
-
-          <div
-            v-if="project.competencies?.length"
-            class="project-details__competencies"
-          >
-            <span
-              v-for="competency in project.competencies"
-              :key="competency"
-              class="project-details__competency"
-            >
-              {{ competency }}
-            </span>
-          </div>
-        </section>
-      </main>
+      <span>
+        2 семестр
+      </span>
     </div>
+
+    <div
+      v-if="project"
+      class="project-layout"
+    >
+      <div class="project-main">
+        <section class="project-section">
+          <h2>О проекте</h2>
+          <p>
+            {{ project.description || 'Описание проекта пока отсутствует.' }}
+          </p>
+        </section>
+
+        <section class="project-section">
+          <h2>Цель проекта</h2>
+          <p>
+            Информация о цели проекта пока отсутствует.
+          </p>
+        </section>
+
+        <section class="project-section">
+          <h2>Требуемые компетенции</h2>
+
+          <p v-if="project.competencies?.length">
+            {{ project.competencies.join(' · ') }}
+          </p>
+        </section>
+      </div>
+
+      <aside class="project-sidebar">
+        <span class="project-sidebar__label">
+          Руководитель проекта
+        </span>
+
+        <strong>
+          {{ project.supervisorName }}
+        </strong>
+
+        <p>
+          {{ project.department }}
+        </p>
+
+        <hr>
+
+        <p>
+          Свободных мест:
+          {{ (project.totalPlaces ?? 0) - (project.occupiedPlaces ?? 0) }}
+        </p>
+        <p class="project-sidebar__application-hint">
+          Заявка будет отправлена руководителю проекта на рассмотрение.
+        </p>
+        <button class="project-sidebar__button project-sidebar__button--primary"
+          type="button"
+          aria-disabled="true">
+          Подать заявку
+        </button>
+        <section class="project-sidebar__description">
+          <h6>После подачи</h6>
+          <p>Статус заявки появится в разделе «Мои заявки».</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
   </AppLayout>
 </template>
 

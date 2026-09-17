@@ -1,12 +1,12 @@
 :root {
   --color-primary: #3d3894;
-  --color-primary-hover: #332f82;
+  --color-primary-hover: #fff;
 
   --color-accent: #a3d12e;
 
   --color-background: #f9f9fb;
   --color-surface: #ffffff;
-
+  --color-surface-green: #F5FAE8;
   --color-text-primary: #14141a;
   --color-text-secondary: #66697a;
   --color-text-muted: #8f91a1;
