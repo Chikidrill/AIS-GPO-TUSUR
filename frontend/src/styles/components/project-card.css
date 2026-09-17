@@ -146,4 +146,13 @@
 
 .project-card__button--primary:hover {
   background: var(--color-primary-hover);
+  color: var(--color-primary);
+}
+
+.project-card__closed {
+  margin-top: 10px !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  font-weight: 500;
+  color: var(--color-error) !important;
 }

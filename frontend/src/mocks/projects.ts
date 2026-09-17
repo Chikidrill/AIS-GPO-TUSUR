@@ -23,7 +23,7 @@ export interface Project {
 
 export const mockProjects: Project[] = [
   {
-    id: 1383,
+    id: 2,
     code: 'ПР1383',
     name: 'Разработка интеллектуальной системы мониторинга',
     description: null,
@@ -41,7 +41,7 @@ export const mockProjects: Project[] = [
     code: 'ПР1264',
     name: 'Мобильный сервис для университетской инфраструктуры',
     description: null,
-    status: 'OPEN',
+    status: 'COMPLETED',
     faculty: 'ФСУ',
     department: 'Кафедра АСУ',
     supervisorName: 'Петров П. П.',

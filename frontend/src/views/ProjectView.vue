@@ -78,6 +78,30 @@ async function loadProject() {
   
   project.value = foundProject
   loading.value = false
+  await loadApplications()
+}
+
+async function loadApplications() {
+  if (role !== 'STUDENT') {
+    return
+  }
+
+  try {
+    const { data } = await http.get<ApplicationResponse[]>(
+      '/me/applications'
+    )
+
+    applicationCreated.value = data.some(
+      application =>
+        application.projectId === project.value?.id &&
+        (
+          application.status === 'CREATED' ||
+          application.status === 'UNDER_REVIEW'
+        )
+    )
+  } catch {
+    applicationCreated.value = false
+  }
 }
 
 async function applyToProject() {
@@ -161,6 +185,30 @@ onMounted(() => {
   >
     <div class="project-page">
   <main class="project-content">
+
+      <div
+      v-if="loading"
+      class="project-state"
+    >
+      Загрузка проекта...
+    </div>
+
+    <div
+      v-else-if="error"
+      class="project-state project-state--error"
+    >
+      <h2>Проект не найден</h2>
+
+      <p>{{ error }}</p>
+
+      <RouterLink
+        to="/projects"
+        class="project-state__button"
+      >
+        Вернуться в каталог
+      </RouterLink>
+    </div>
+
     <h1 class="project-title">
       {{ project?.name }}
     </h1>
@@ -237,15 +285,41 @@ onMounted(() => {
         <p class="project-sidebar__application-hint">
           Заявка будет отправлена руководителю проекта на рассмотрение.
         </p>
-        <button class="project-sidebar__button project-sidebar__button--primary"
+        <button
+          v-if="canApply"
+          class="project-sidebar__button project-sidebar__button--primary"
           type="button"
-          aria-disabled="true">
-          Подать заявку
+          :disabled="submitting"
+          @click="applyToProject"
+        >
+          {{ submitting ? 'Отправка...' : 'Подать заявку' }}
         </button>
-        <section class="project-sidebar__description">
+        <div
+          v-if="applicationCreated"
+          class="project-sidebar__description"
+        >
           <h6>После подачи</h6>
-          <p>Статус заявки появится в разделе «Мои заявки».</p>
-        </section>
+          <p>
+            Заявка успешно отправлена. Статус заявки появится
+            в разделе «Мои заявки».
+          </p>
+        </div>
+        <p
+          v-if="applicationError"
+          class="project-sidebar__error"
+        >
+          Ошибка: {{ applicationError }}
+        </p>
+
+        <p
+          v-if="
+          
+          project?.status !== 'OPEN' &&
+          !applicationCreated"
+          class="project-sidebar__closed"
+        >
+          Приём заявок на этот проект закрыт.
+        </p>
       </aside>
     </div>
   </main>

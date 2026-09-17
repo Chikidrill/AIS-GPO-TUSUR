@@ -88,6 +88,10 @@ defineProps<{
       >
         Подать заявку
       </button>
+      <p v-if="project.status === 'COMPLETED'"
+      class="project-card__closed">
+        Приём заявок на этот проект закрыт.
+      </p>
     </div>
   </article>
 </template>
