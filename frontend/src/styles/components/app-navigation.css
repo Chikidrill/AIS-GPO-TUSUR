@@ -31,7 +31,8 @@
 }
 
 .app-navigation__item:hover {
-  background: var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-primary);
 }
 
 .app-navigation__item.router-link-active {
@@ -39,7 +40,8 @@
 }
 
 .app-navigation__item:hover:not(:disabled) {
-  background: var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-primary);
 }
 
 
