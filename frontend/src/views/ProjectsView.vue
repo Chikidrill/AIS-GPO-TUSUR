@@ -6,13 +6,9 @@ import { http } from '../api/http'
 import AppLayout from '../components/AppLayout.vue'
 import ProjectCard from '../components/ProjectCard.vue'
 
-import {
-  mockProjects,
-  type Project,
-} from '../mocks/projects'
+import {type Project} from '../mocks/projects'
 
 type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT'
-
 interface CurrentUser {
   id: number
   email: string
@@ -99,12 +95,13 @@ async function loadPage() {
   error.value = ''
 
   try {
-    const { data } = await http.get<CurrentUser>('/me')
+    const [userResponse, projectsResponse] = await Promise.all([
+      http.get<CurrentUser>('/me'),
+      http.get<Project[]>('/projects'),
+    ])
 
-    currentUser.value = data
-
-    // Временно используем mockProjects для проверки дизайна.
-    projects.value = mockProjects
+    currentUser.value = userResponse.data
+    projects.value = projectsResponse.data
   } catch {
     error.value = 'Не удалось загрузить каталог проектов.'
   } finally {

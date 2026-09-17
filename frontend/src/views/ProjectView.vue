@@ -2,10 +2,7 @@
 import axios from 'axios'
 import {computed, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {
-  mockProjects,
-  type Project,
-} from '../mocks/projects'
+import {  type Project } from '../mocks/projects'
 import {http} from '../api/http'
 import AppLayout from '../components/AppLayout.vue'
 
@@ -67,18 +64,19 @@ async function loadProject() {
   loading.value = true
   error.value = ''
 
-  const projectId = Number(route.params.id);
-  const foundProject = mockProjects.find(project=>project.id === projectId)
+  try {
+    const { data } = await http.get<Project>(
+      `/projects/${route.params.id}`
+    )
 
-  if(!foundProject){
-    error.value ='Проект не найден'
+    project.value = data
+
+    await loadApplications()
+  } catch {
+    error.value = 'Не удалось загрузить проект.'
+  } finally {
     loading.value = false
-    return
   }
-  
-  project.value = foundProject
-  loading.value = false
-  await loadApplications()
 }
 
 async function loadApplications() {

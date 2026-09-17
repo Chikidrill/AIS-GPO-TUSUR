@@ -65,7 +65,7 @@ export const mockProjects: Project[] = [
     totalPlaces: 10,
   },
   {
-    id: 1384,
+    id: 1,
     code: 'ПР1384',
     name: 'Разработка интеллектуальной системы мониторинга',
     description: null,
