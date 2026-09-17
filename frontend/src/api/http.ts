@@ -13,3 +13,17 @@ http.interceptors.request.use((config) => {
 
   return config
 })
+
+http.interceptors.response.use((response) => response, 
+        (error)=>{
+          if(
+            error.response?.status === 401 &&
+            !error.config.url?.includes('/auth/login')
+          ) {
+            localStorage.removeItem('accesToken')
+            localStorage.removeItem('role')
+
+            window.location.href='/login'
+          }
+        },
+      )
