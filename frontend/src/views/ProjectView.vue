@@ -1,31 +1,21 @@
 <script setup lang="ts">
 import axios from 'axios'
 import {computed, onMounted, ref} from 'vue'
-import {useRoute} from 'vue-router'
-
+import {useRoute, useRouter} from 'vue-router'
+import {
+  mockProjects,
+  type Project,
+} from '../mocks/projects'
 import {http} from '../api/http'
+import AppLayout from '../components/AppLayout.vue'
 
-type ProjectStatus =
-  | 'DRAFT'
-  | 'OPEN'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'ARCHIVED'
+type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT'
 
-interface Project {
+interface CurrentUser {
   id: number
-  name: string
-  description: string | null
-  status: ProjectStatus
-
-  // Поля, необходимые по макету
-  code?: string
-  department?: string
-  supervisorName?: string
-  direction?: string
-  competencies?: string[]
-  occupiedPlaces?: number
-  totalPlaces?: number
+  email: string
+  fullName: string
+  role: UserRole
 }
 
 interface ApplicationResponse {
@@ -53,6 +43,8 @@ interface ApiError {
 }
 
 const route = useRoute()
+const router = useRouter()
+const currentUser = ref<CurrentUser | null>(null)
 
 const project = ref<Project | null>(null)
 
@@ -75,17 +67,17 @@ async function loadProject() {
   loading.value = true
   error.value = ''
 
-  try {
-    const { data } = await http.get<Project>(
-      `/projects/${route.params.id}`,
-    )
+  const projectId = Number(route.params.id);
+  const foundProject = mockProjects.find(project=>project.id === projectId)
 
-    project.value = data
-  } catch {
-    error.value = 'Не удалось загрузить проект.'
-  } finally {
+  if(!foundProject){
+    error.value ='Проект не найден'
     loading.value = false
+    return
   }
+  
+  project.value = foundProject
+  loading.value = false
 }
 
 async function applyToProject() {
@@ -140,55 +132,101 @@ async function applyToProject() {
   }
 }
 
-onMounted(loadProject)
+async function loadCurrentUser() {
+  try {
+    const { data } = await http.get<CurrentUser>('/me')
+    currentUser.value = data
+  } catch {
+    currentUser.value = null
+  }
+}
+
+async function logout() {
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('role')
+
+  await router.push('/login')
+}
+
+onMounted(() => {
+  loadProject()
+  loadCurrentUser()
+})
 </script>
 
 <template>
-  <main>
-    <RouterLink to="/projects">
-      ← К списку проектов
-    </RouterLink>
+  <AppLayout
+    :user="currentUser"
+    @logout="logout"
+  >
+    <div class="project-page">
+      <main class="project-content">
+        <RouterLink
+          to="/projects"
+          class="project-back"
+        >
+          ← К списку проектов
+        </RouterLink>
 
-    <p v-if="loading">
-      Загрузка...
-    </p>
+        <section
+          v-if="project"
+          class="project-details"
+        >
+          <div class="project-details__top">
+            <span class="project-details__code">
+              {{ project.code || `ПР${project.id}` }}
+            </span>
 
-    <p v-else-if="error">
-      {{ error }}
-    </p>
+            <span
+              v-if="
+                project.occupiedPlaces !== undefined &&
+                project.totalPlaces !== undefined
+              "
+              class="project-details__places"
+            >
+              {{ project.occupiedPlaces }} из {{ project.totalPlaces }} мест
+            </span>
+          </div>
 
-    <section v-else-if="project">
-      <h1>{{ project.name }}</h1>
+          <h1 class="project-details__title">
+            {{ project.name }}
+          </h1>
 
-      <p>
-        {{ project.description || 'Описание отсутствует' }}
-      </p>
+          <p v-if="project.faculty">
+            {{ project.faculty }}
+          </p>
 
-      <p>
-        Статус: {{ project.status }}
-      </p>
+          <p v-if="project.department">
+            {{ project.department }}
+          </p>
 
-      <button
-        v-if="canApply"
-        :disabled="submitting"
-        @click="applyToProject"
-      >
-        {{ submitting ? 'Отправка...' : 'Подать заявку' }}
-      </button>
+          <p v-if="project.supervisorName">
+            Руководитель: {{ project.supervisorName }}
+          </p>
 
-      <p
-        v-else-if="role === 'STUDENT' && project.status !== 'OPEN'"
-      >
-        Приём заявок закрыт.
-      </p>
+          <p v-if="project.direction">
+            {{ project.direction }}
+          </p>
 
-      <p v-if="applicationCreated">
-        Заявка успешно отправлена.
-      </p>
-
-      <p v-if="applicationError">
-        {{ applicationError }}
-      </p>
-    </section>
-  </main>
+          <div
+            v-if="project.competencies?.length"
+            class="project-details__competencies"
+          >
+            <span
+              v-for="competency in project.competencies"
+              :key="competency"
+              class="project-details__competency"
+            >
+              {{ competency }}
+            </span>
+          </div>
+        </section>
+      </main>
+    </div>
+  </AppLayout>
 </template>
+
+<style
+  scoped
+  src="../styles/pages/project.css"
+></style>

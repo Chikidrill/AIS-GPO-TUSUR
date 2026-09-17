@@ -1,25 +1,5 @@
 <script setup lang="ts">
-type ProjectStatus =
-  | 'DRAFT'
-  | 'OPEN'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'ARCHIVED'
-
-interface Project {
-  id: number
-  name: string
-  description: string | null
-  status: ProjectStatus
-
-  code?: string
-  department?: string
-  supervisorName?: string
-  direction?: string
-  competencies?: string[]
-  occupiedPlaces?: number
-  totalPlaces?: number
-}
+import type { Project } from '../mocks/projects'
 
 defineProps<{
   project: Project
@@ -93,13 +73,12 @@ defineProps<{
     <div class="project-card__spacer" />
 
     <div class="project-card__actions">
-      <button
+      <RouterLink
         class="project-card__button project-card__button--secondary"
-        type="button"
-        aria-disabled="true"
+        :to="`/projects/${project.id}`"
       >
         Подробнее
-      </button>
+      </RouterLink>
 
       <button
         v-if="project.status === 'OPEN'"
