@@ -52,10 +52,6 @@ const roleName = computed(() => {
         </div>
         </RouterLink>
 
-    <div class="app-header__divider" />
-
-    
-
     <div class="app-header__spacer" />
 
     <div

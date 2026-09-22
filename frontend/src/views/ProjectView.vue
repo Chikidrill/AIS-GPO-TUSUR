@@ -49,7 +49,7 @@ const loading = ref(true)
 const error = ref('')
 
 const submitting = ref(false)
-const applicationCreated = ref(false)
+const activeApplication = ref<ApplicationResponse | null>(null)
 const applicationError = ref('')
 
 const role = localStorage.getItem('role')
@@ -57,7 +57,7 @@ const role = localStorage.getItem('role')
 const canApply = computed(() => {
   return role === 'STUDENT'
     && project.value?.status === 'OPEN'
-    && !applicationCreated.value
+    && !activeApplication.value
 })
 
 async function loadProject() {
@@ -89,16 +89,17 @@ async function loadApplications() {
       '/me/applications'
     )
 
-    applicationCreated.value = data.some(
-      application =>
-        application.projectId === project.value?.id &&
-        (
-          application.status === 'CREATED' ||
-          application.status === 'UNDER_REVIEW'
-        )
-    )
+   activeApplication.value =
+  data.find(
+    application =>
+      application.projectId === project.value?.id &&
+      (
+        application.status === 'CREATED' ||
+        application.status === 'UNDER_REVIEW'
+      )
+  ) ?? null
   } catch {
-    applicationCreated.value = false
+    activeApplication.value = null
   }
 }
 
@@ -111,11 +112,11 @@ async function applyToProject() {
   applicationError.value = ''
 
   try {
-    await http.post<ApplicationResponse>(
+    const {data} = await http.post<ApplicationResponse>(
       `/projects/${project.value.id}/applications`,
     )
 
-    applicationCreated.value = true
+    activeApplication.value = data
   } catch (err) {
     if (axios.isAxiosError<ApiError>(err)) {
       const code = err.response?.data?.code
@@ -151,6 +152,25 @@ async function applyToProject() {
     }
   } finally {
     submitting.value = false
+  }
+}
+
+async function cancelApplication() {
+  if (!activeApplication.value) {
+    return
+  }
+
+  applicationError.value = ''
+
+  try {
+    await http.delete(
+      `/applications/${activeApplication.value.id}`
+    )
+
+    activeApplication.value = null
+  } catch {
+    applicationError.value =
+      'Не удалось отменить заявку.'
   }
 }
 
@@ -292,16 +312,24 @@ onMounted(() => {
         >
           {{ submitting ? 'Отправка...' : 'Подать заявку' }}
         </button>
-        <div
-          v-if="applicationCreated"
-          class="project-sidebar__description"
-        >
-          <h6>После подачи</h6>
-          <p>
-            Заявка успешно отправлена. Статус заявки появится
-            в разделе «Мои заявки».
-          </p>
-        </div>
+      
+        <template v-if="activeApplication">
+          <button
+            class="project-sidebar__button project-sidebar__button--secondary"
+            type="button"
+            @click="cancelApplication"
+          >
+            Отозвать заявку
+          </button>
+
+          <div class="project-sidebar__description">
+            <h6>После подачи</h6>
+
+            <p>
+              Статус заявки появится в разделе «Мои заявки».
+            </p>
+          </div>
+        </template>
         <p
           v-if="applicationError"
           class="project-sidebar__error"
@@ -313,7 +341,7 @@ onMounted(() => {
           v-if="
           
           project?.status !== 'OPEN' &&
-          !applicationCreated"
+          !activeApplication"
           class="project-sidebar__closed"
         >
           Приём заявок на этот проект закрыт.
