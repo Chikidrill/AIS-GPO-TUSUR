@@ -104,7 +104,11 @@ async function loadApplications() {
 }
 
 async function applyToProject() {
-  if (!project.value) {
+  if (
+    !project.value ||
+    project.value.status !== 'OPEN' ||
+    activeApplication.value
+  ) {
     return
   }
 
@@ -118,8 +122,15 @@ async function applyToProject() {
 
     activeApplication.value = data
   } catch (err) {
+
+
+ console.log('CAUGHT ERROR:', err)
+  console.log('IS AXIOS ERROR:', axios.isAxiosError(err))
     if (axios.isAxiosError<ApiError>(err)) {
+
+
       const code = err.response?.data?.code
+
 
       switch (code) {
         case 'ACTIVE_APPLICATION_ALREADY_EXISTS':
