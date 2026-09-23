@@ -12,21 +12,43 @@ namespace AisGpo.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/v1/me")]
-public sealed class MeController(AppDbContext db, ParticipationApplicationService applications, MeProjectService meProject) : ControllerBase
+public sealed class MeController(
+    AppDbContext db,
+    ParticipationApplicationService applications,
+    MeProjectService meProject) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<CurrentUserResponse>> GetMe(CancellationToken ct)
+    public async Task<ActionResult<CurrentUserResponse>> GetMe(
+        CancellationToken ct)
     {
-        var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == User.GetUserId(), ct)
-            ?? throw new ApiException(StatusCodes.Status401Unauthorized, "USER_NOT_FOUND", "Authenticated user no longer exists.");
-        return Ok(new CurrentUserResponse(user.Id, user.Email, user.FullName, user.Role));
+        var user = await db.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                x => x.Id == User.GetUserId(),
+                ct)
+            ?? throw new ApiException(
+                StatusCodes.Status401Unauthorized,
+                "USER_NOT_FOUND",
+                "Authenticated user no longer exists.");
+
+        return Ok(new CurrentUserResponse(
+            user.Id,
+            user.Email,
+            user.FullName,
+            user.Role));
     }
 
     [HttpGet("profile")]
     [Authorize(Roles = nameof(UserRole.STUDENT))]
-    public async Task<ActionResult<StudentProfileResponse>> GetProfile(CancellationToken ct)
+    public async Task<ActionResult<StudentProfileResponse>> GetProfile(
+        CancellationToken ct)
     {
-        var profile = await db.StudentProfiles.AsNoTracking().SingleOrDefaultAsync(x => x.UserId == User.GetUserId(), ct);
+        var profile = await db.StudentProfiles
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                x => x.UserId == User.GetUserId(),
+                ct);
+
         return Ok(new StudentProfileResponse(
             profile?.GroupNumber,
             profile?.About,
@@ -35,20 +57,35 @@ public sealed class MeController(AppDbContext db, ParticipationApplicationServic
 
     [HttpPatch("profile")]
     [Authorize(Roles = nameof(UserRole.STUDENT))]
-    public async Task<ActionResult<StudentProfileResponse>> UpdateProfile(UpdateStudentProfileRequest request, CancellationToken ct)
+    public async Task<ActionResult<StudentProfileResponse>> UpdateProfile(
+        UpdateStudentProfileRequest request,
+        CancellationToken ct)
     {
         var userId = User.GetUserId();
-        var profile = await db.StudentProfiles.SingleOrDefaultAsync(x => x.UserId == userId, ct);
+
+        var profile = await db.StudentProfiles
+            .SingleOrDefaultAsync(
+                x => x.UserId == userId,
+                ct);
+
         if (profile is null)
         {
-            profile = new StudentProfile { UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
+            profile = new StudentProfile
+            {
+                UserId = userId,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
             db.StudentProfiles.Add(profile);
         }
+
         profile.GroupNumber = request.GroupNumber?.Trim();
         profile.About = request.About;
         profile.Competencies = request.Competencies;
         profile.UpdatedAt = DateTimeOffset.UtcNow;
+
         await db.SaveChangesAsync(ct);
+
         return Ok(new StudentProfileResponse(
             profile.GroupNumber,
             profile.About,
@@ -57,13 +94,30 @@ public sealed class MeController(AppDbContext db, ParticipationApplicationServic
 
     [HttpGet("applications")]
     [Authorize(Roles = nameof(UserRole.STUDENT))]
-    public async Task<ActionResult<IReadOnlyList<ApplicationResponse>>> GetApplications(CancellationToken ct) =>
-        Ok(await applications.ListForStudentAsync(User.GetUserId(), ct));
+    public async Task<ActionResult<IReadOnlyList<ApplicationResponse>>> GetApplications(
+        CancellationToken ct)
+    {
+        var applicationsResponse = await applications
+            .ListForStudentAsync(
+                User.GetUserId(),
+                ct);
+
+        return Ok(applicationsResponse);
+    }
 
     [HttpGet("project")]
     [Authorize(Roles = nameof(UserRole.STUDENT))]
-    public async Task<ActionResult<MyProjectResponse>> GetProject(CancellationToken ct) =>
-        Ok(await meProject.GetAsync(User.GetUserId(), ct));
+    public async Task<ActionResult<MyProjectResponse>> GetProject(
+        CancellationToken ct)
+    {
+        var project = await meProject
+            .GetAsync(
+                User.GetUserId(),
+                ct);
+
+        return Ok(project);
+    }
+
     [HttpGet("projects")]
     [Authorize(Roles = nameof(UserRole.TEACHER))]
     public async Task<ActionResult<IReadOnlyList<ProjectResponse>>> GetProjects(
@@ -78,18 +132,48 @@ public sealed class MeController(AppDbContext db, ParticipationApplicationServic
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(ct);
 
+        if (projects.Count == 0)
+            return Ok(Array.Empty<ProjectResponse>());
+
+        var projectIds = projects
+            .Select(x => x.Id)
+            .ToList();
+
+        var occupiedPlaces = await db.ProjectMemberships
+            .AsNoTracking()
+            .Where(x =>
+                projectIds.Contains(x.ProjectId) &&
+                x.Status == MembershipStatus.ACTIVE)
+            .GroupBy(x => x.ProjectId)
+            .Select(group => new
+            {
+                ProjectId = group.Key,
+                Count = group.Count()
+            })
+            .ToDictionaryAsync(
+                x => x.ProjectId,
+                x => x.Count,
+                ct);
+
         var response = projects
-            .Select(x => new ProjectResponse(
-                x.Id,
-                x.Name,
-                x.Department,
-                x.Description,
-                x.Status,
-                x.SupervisorId,
-                x.Supervisor?.FullName))
+            .Select(project => new ProjectResponse(
+                project.Id,
+                project.Code,
+                project.Name,
+                project.Faculty,
+                project.Department,
+                project.Description,
+                project.Goal,
+                project.Direction,
+                project.Semester,
+                project.Competencies ?? Array.Empty<string>(),
+                project.Status,
+                project.SupervisorId,
+                project.Supervisor?.FullName,
+                occupiedPlaces.GetValueOrDefault(project.Id),
+                project.TotalPlaces))
             .ToList();
 
         return Ok(response);
     }
 }
-

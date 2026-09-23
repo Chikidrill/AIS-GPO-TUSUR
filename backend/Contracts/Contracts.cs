@@ -17,19 +17,34 @@ public sealed record LoginResponse(
 public sealed record CurrentUserResponse(long Id, string Email, string FullName, UserRole Role);
 
 public sealed record CreateProjectRequest(
+    [MaxLength(50)] string? Code,
     [Required, MaxLength(255)] string Name,
+    [MaxLength(255)] string? Faculty,
     [Required, MaxLength(255)] string Department,
     [MaxLength(10000)] string? Description,
+    [MaxLength(10000)] string? Goal,
+    [MaxLength(255)] string? Direction,
+    [Range(1, 20)] int? Semester,
+    string[]? Competencies,
+    [Range(1, int.MaxValue)] int? TotalPlaces,
     long? SupervisorId);
 
 public sealed record ProjectResponse(
     long Id,
+    string? Code,
     string Name,
+    string? Faculty,
     string Department,
     string? Description,
+    string? Goal,
+    string? Direction,
+    int? Semester,
+    IReadOnlyList<string> Competencies,
     ProjectStatus Status,
     long? SupervisorId,
-    string? SupervisorName);
+    string? SupervisorName,
+    int OccupiedPlaces,
+    int? TotalPlaces);
 
 public sealed record StudentProfileResponse(
     string? GroupNumber,

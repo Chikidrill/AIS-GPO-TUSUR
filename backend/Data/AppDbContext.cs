@@ -51,12 +51,21 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             e.ToTable("projects");
             e.HasKey(x => x.Id);
 
-            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.Id)
+                .HasColumnName("id");
+
+            e.Property(x => x.Code)
+                .HasColumnName("code")
+                .HasMaxLength(50);
 
             e.Property(x => x.Name)
                 .HasColumnName("name")
                 .HasMaxLength(255)
                 .IsRequired();
+
+            e.Property(x => x.Faculty)
+                .HasColumnName("faculty")
+                .HasMaxLength(255);
 
             e.Property(x => x.Department)
                 .HasColumnName("department")
@@ -65,6 +74,23 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
             e.Property(x => x.Description)
                 .HasColumnName("description");
+
+            e.Property(x => x.Goal)
+                .HasColumnName("goal");
+
+            e.Property(x => x.Direction)
+                .HasColumnName("direction")
+                .HasMaxLength(255);
+
+            e.Property(x => x.Semester)
+                .HasColumnName("semester");
+
+            e.Property(x => x.Competencies)
+                .HasColumnName("competencies")
+                .HasColumnType("text[]");
+
+            e.Property(x => x.TotalPlaces)
+                .HasColumnName("total_places");
 
             e.Property(x => x.Status)
                 .HasColumnName("status")
@@ -82,6 +108,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
             e.Property(x => x.UpdatedAt)
                 .HasColumnName("updated_at");
+
+            e.HasIndex(x => x.Code)
+                .IsUnique();
 
             e.HasOne(x => x.Supervisor)
                 .WithMany()
