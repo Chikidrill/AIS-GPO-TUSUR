@@ -40,9 +40,25 @@ public sealed class Project
 {
     public long Id { get; set; }
 
+    public string? Code { get; set; }
+
     public string Name { get; set; } = string.Empty;
+
+    public string? Faculty { get; set; }
+
     public string Department { get; set; } = string.Empty;
+
     public string? Description { get; set; }
+
+    public string? Goal { get; set; }
+
+    public string? Direction { get; set; }
+
+    public int? Semester { get; set; }
+
+    public string[]? Competencies { get; set; }
+
+    public int? TotalPlaces { get; set; }
 
     public ProjectStatus Status { get; set; }
 
