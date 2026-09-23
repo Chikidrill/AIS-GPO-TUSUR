@@ -55,8 +55,17 @@ public sealed record ApplicationResponse(
 
 public sealed record RejectApplicationRequest([MaxLength(4000)] string? Reason);
 
-public sealed record ParticipantResponse(long Id, string FullName);
+public sealed record ParticipantResponse(
+    long Id,
+    string FullName);
 
+public sealed record ProjectParticipantResponse(
+    long Id,
+    string FullName,
+    string? GroupNumber,
+    string? Competencies,
+    DateTimeOffset JoinedAt);
+    
 public sealed record MyProjectResponse(
     long Id,
     string Name,

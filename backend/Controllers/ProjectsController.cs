@@ -112,4 +112,61 @@ public sealed class ProjectsController(AppDbContext db) : ControllerBase
                 project.SupervisorId,
                 supervisor?.FullName));
     }
+    [HttpGet("{projectId:long}/participants")]
+    [Authorize(Roles = nameof(UserRole.TEACHER))]
+    public async Task<ActionResult<IReadOnlyList<ProjectParticipantResponse>>> GetParticipants(
+        long projectId,
+        CancellationToken ct)
+    {
+        var teacherId = User.GetUserId();
+
+        var project = await db.Projects
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == projectId, ct);
+
+        if (project is null)
+            return NotFound();
+
+        if (project.SupervisorId != teacherId)
+        {
+            throw new ApiException(
+                StatusCodes.Status403Forbidden,
+                "PROJECT_ACCESS_DENIED",
+                "Teacher is not the supervisor of this project.");
+        }
+
+        var memberships = await db.ProjectMemberships
+            .AsNoTracking()
+            .Include(x => x.Student)
+            .Where(x =>
+                x.ProjectId == projectId &&
+                x.Status == MembershipStatus.ACTIVE)
+            .OrderBy(x => x.JoinedAt)
+            .ToListAsync(ct);
+
+        var studentIds = memberships
+            .Select(x => x.StudentId)
+            .ToList();
+
+        var profiles = await db.StudentProfiles
+            .AsNoTracking()
+            .Where(x => studentIds.Contains(x.UserId))
+            .ToDictionaryAsync(x => x.UserId, ct);
+
+        var response = memberships
+            .Select(x =>
+            {
+                profiles.TryGetValue(x.StudentId, out var profile);
+
+                return new ProjectParticipantResponse(
+                    x.StudentId,
+                    x.Student.FullName,
+                    profile?.GroupNumber,
+                    profile?.Competencies,
+                    x.JoinedAt);
+            })
+            .ToList();
+
+        return Ok(response);
+    }
 }

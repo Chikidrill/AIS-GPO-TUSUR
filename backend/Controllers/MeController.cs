@@ -64,5 +64,32 @@ public sealed class MeController(AppDbContext db, ParticipationApplicationServic
     [Authorize(Roles = nameof(UserRole.STUDENT))]
     public async Task<ActionResult<MyProjectResponse>> GetProject(CancellationToken ct) =>
         Ok(await meProject.GetAsync(User.GetUserId(), ct));
+    [HttpGet("projects")]
+    [Authorize(Roles = nameof(UserRole.TEACHER))]
+    public async Task<ActionResult<IReadOnlyList<ProjectResponse>>> GetProjects(
+        CancellationToken ct)
+    {
+        var teacherId = User.GetUserId();
+
+        var projects = await db.Projects
+            .AsNoTracking()
+            .Include(x => x.Supervisor)
+            .Where(x => x.SupervisorId == teacherId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(ct);
+
+        var response = projects
+            .Select(x => new ProjectResponse(
+                x.Id,
+                x.Name,
+                x.Department,
+                x.Description,
+                x.Status,
+                x.SupervisorId,
+                x.Supervisor?.FullName))
+            .ToList();
+
+        return Ok(response);
+    }
 }
 
