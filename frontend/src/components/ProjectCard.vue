@@ -79,15 +79,6 @@ defineProps<{
       >
         Подробнее
       </RouterLink>
-
-      <button
-        v-if="project.status === 'OPEN'"
-        class="project-card__button project-card__button--primary"
-        type="button"
-        aria-disabled="true"
-      >
-        Подать заявку
-      </button>
       <p v-if="project.status === 'COMPLETED'"
       class="project-card__closed">
         Приём заявок на этот проект закрыт.

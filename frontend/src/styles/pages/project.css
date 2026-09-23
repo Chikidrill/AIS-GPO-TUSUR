@@ -299,3 +299,18 @@
   background: var(--color-primary-hover);
   color: var(--color-primary) 
 }
+
+.project-sidebar__membership {
+  margin-top: 20px;
+  padding: 12px 14px;
+
+  border: 1px solid #dce8bd;
+  border-radius: var(--radius-control);
+
+  background: var(--color-surface-green);
+  color: #4d6b1f;
+
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+}
