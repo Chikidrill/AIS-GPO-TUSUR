@@ -39,6 +39,17 @@ interface ApiError {
   timestamp: string
 }
 
+interface MyProjectResponse {
+  id: number
+  name: string
+  description: string | null
+  participants: {
+    id: number
+    fullName: string
+  }[]
+}
+
+const myProjectId = ref<number | null> (null)
 const route = useRoute()
 const router = useRouter()
 const currentUser = ref<CurrentUser | null>(null)
@@ -49,7 +60,7 @@ const loading = ref(true)
 const error = ref('')
 
 const submitting = ref(false)
-const applicationCreated = ref(false)
+const activeApplication = ref<ApplicationResponse | null>(null)
 const applicationError = ref('')
 
 const role = localStorage.getItem('role')
@@ -57,7 +68,8 @@ const role = localStorage.getItem('role')
 const canApply = computed(() => {
   return role === 'STUDENT'
     && project.value?.status === 'OPEN'
-    && !applicationCreated.value
+    && !activeApplication.value
+    && myProjectId.value !== project.value?.id
 })
 
 async function loadProject() {
@@ -71,11 +83,30 @@ async function loadProject() {
 
     project.value = data
 
-    await loadApplications()
+    await Promise.all([
+      loadApplications(),
+      loadMyProject(),
+    ])
   } catch {
     error.value = 'Не удалось загрузить проект.'
   } finally {
     loading.value = false
+  }
+}
+
+async function loadMyProject() {
+  if (role !== 'STUDENT') {
+    return
+  }
+
+  try {
+    const { data } = await http.get<MyProjectResponse>(
+      '/me/project'
+    )
+
+    myProjectId.value = data.id
+  } catch {
+    myProjectId.value = null
   }
 }
 
@@ -89,21 +120,26 @@ async function loadApplications() {
       '/me/applications'
     )
 
-    applicationCreated.value = data.some(
-      application =>
-        application.projectId === project.value?.id &&
-        (
-          application.status === 'CREATED' ||
-          application.status === 'UNDER_REVIEW'
-        )
-    )
+   activeApplication.value =
+  data.find(
+    application =>
+      application.projectId === project.value?.id &&
+      (
+        application.status === 'CREATED' ||
+        application.status === 'UNDER_REVIEW'
+      )
+  ) ?? null
   } catch {
-    applicationCreated.value = false
+    activeApplication.value = null
   }
 }
 
 async function applyToProject() {
-  if (!project.value) {
+  if (
+    !project.value ||
+    project.value.status !== 'OPEN' ||
+    activeApplication.value
+  ) {
     return
   }
 
@@ -111,14 +147,21 @@ async function applyToProject() {
   applicationError.value = ''
 
   try {
-    await http.post<ApplicationResponse>(
+    const {data} = await http.post<ApplicationResponse>(
       `/projects/${project.value.id}/applications`,
     )
 
-    applicationCreated.value = true
+    activeApplication.value = data
   } catch (err) {
+
+
+ console.log('CAUGHT ERROR:', err)
+  console.log('IS AXIOS ERROR:', axios.isAxiosError(err))
     if (axios.isAxiosError<ApiError>(err)) {
+
+
       const code = err.response?.data?.code
+
 
       switch (code) {
         case 'ACTIVE_APPLICATION_ALREADY_EXISTS':
@@ -154,6 +197,25 @@ async function applyToProject() {
   }
 }
 
+async function cancelApplication() {
+  if (!activeApplication.value) {
+    return
+  }
+
+  applicationError.value = ''
+
+  try {
+    await http.delete(
+      `/applications/${activeApplication.value.id}`
+    )
+
+    activeApplication.value = null
+  } catch {
+    applicationError.value =
+      'Не удалось отменить заявку.'
+  }
+}
+
 async function loadCurrentUser() {
   try {
     const { data } = await http.get<CurrentUser>('/me')
@@ -170,9 +232,12 @@ async function logout() {
   await router.push('/login')
 }
 
+
+
 onMounted(() => {
   loadProject()
   loadCurrentUser()
+
 })
 </script>
 
@@ -225,7 +290,7 @@ onMounted(() => {
           project.totalPlaces !== undefined
         "
       >
-        {{ project.occupiedPlaces }} из {{ project.totalPlaces }} мест
+       Занято {{ project.occupiedPlaces }} из {{ project.totalPlaces }} мест
       </span>
 
       <span>
@@ -248,7 +313,7 @@ onMounted(() => {
         <section class="project-section">
           <h2>Цель проекта</h2>
           <p>
-            Информация о цели проекта пока отсутствует.
+            {{ project.goal }}
           </p>
         </section>
 
@@ -292,16 +357,30 @@ onMounted(() => {
         >
           {{ submitting ? 'Отправка...' : 'Подать заявку' }}
         </button>
+
         <div
-          v-if="applicationCreated"
-          class="project-sidebar__description"
-        >
-          <h6>После подачи</h6>
-          <p>
-            Заявка успешно отправлена. Статус заявки появится
-            в разделе «Мои заявки».
-          </p>
-        </div>
+            v-if="myProjectId === project?.id"
+            class="project-sidebar__membership"
+          >
+            Вы участвуете в этом проекте.
+        </div> 
+        <template v-if="activeApplication && myProjectId !== project?.id">
+          <button
+            class="project-sidebar__button project-sidebar__button--secondary"
+            type="button"
+            @click="cancelApplication"
+          >
+            Отозвать заявку
+          </button>
+          
+          <div class="project-sidebar__description">
+            <h6>После подачи</h6>
+            <p>
+              Статус заявки появится в разделе «Мои заявки».
+            </p>
+          </div>
+       
+        </template>
         <p
           v-if="applicationError"
           class="project-sidebar__error"
@@ -313,7 +392,7 @@ onMounted(() => {
           v-if="
           
           project?.status !== 'OPEN' &&
-          !applicationCreated"
+          !activeApplication"
           class="project-sidebar__closed"
         >
           Приём заявок на этот проект закрыт.

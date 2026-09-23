@@ -10,7 +10,7 @@ export interface Project {
   name: string
   description: string | null
   status: ProjectStatus
-
+  goal?: string
   code?: string
   faculty?: string
   department?: string
