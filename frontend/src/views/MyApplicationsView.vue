@@ -74,6 +74,24 @@ const filteredApplications = computed(() => {
   })
 })
 
+const applicationStats = computed(() => ({
+  total: applications.value.length,
+
+  underReview: applications.value.filter(
+    application =>
+      application.status === 'CREATED' ||
+      application.status === 'UNDER_REVIEW'
+  ).length,
+
+  approved: applications.value.filter(
+    application => application.status === 'APPROVED'
+  ).length,
+
+  rejected: applications.value.filter(
+    application => application.status === 'REJECTED'
+  ).length,
+}))
+
 const faculties = computed(() => {
   return [
     ...new Set(
@@ -118,8 +136,6 @@ function getProject(projectId: number) {
 function getStatusLabel(status: ApplicationResponse['status']) {
   switch (status) {
     case 'CREATED':
-      return 'Создана'
-
     case 'UNDER_REVIEW':
       return 'На рассмотрении'
 
@@ -211,7 +227,41 @@ onMounted(loadPage)
                 </option>
             </select>
         </div>
+        <div class="applications-stats">
+            <div class="applications-stat">
+                <span>Всего заявок</span>
+                <strong class="applications-stat__value">
+                {{ applicationStats.total }}
+                </strong>
+            </div>
 
+            <div class="applications-stat">
+                <span>На рассмотрении</span>
+                <strong
+                class="applications-stat__value applications-stat__value--review"
+                >
+                {{ applicationStats.underReview }}
+                </strong>
+            </div>
+
+            <div class="applications-stat">
+                <span>Принято</span>
+                <strong
+                class="applications-stat__value applications-stat__value--approved"
+                >
+                {{ applicationStats.approved }}
+                </strong>
+            </div>
+
+            <div class="applications-stat">
+                <span>Отклонено</span>
+                <strong
+                class="applications-stat__value applications-stat__value--rejected"
+                >
+                {{ applicationStats.rejected }}
+                </strong>
+            </div>
+        </div>
         <p v-if="loading">
             Загрузка заявок...
         </p>
@@ -219,7 +269,12 @@ onMounted(loadPage)
         <p v-else-if="error">
             {{ error }}
         </p>
-
+        <p
+            v-if="!loading && filteredApplications.length === 0"
+            class="applications-empty"
+            >
+            Заявки не найдены.
+        </p>
         <div v-else>
             <div class="applications-table">
                 <div class="applications-table__title">
@@ -239,7 +294,7 @@ onMounted(loadPage)
                     <span>Статус</span>
                     <span>Действия</span>
                 </div>
-
+                
                 <div
                     v-for="application in filteredApplications"
                     :key="application.id"
