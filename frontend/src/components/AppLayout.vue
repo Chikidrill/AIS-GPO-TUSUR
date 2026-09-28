@@ -25,7 +25,7 @@ const emit = defineEmits<{
       @logout="emit('logout')"
     />
 
-    <AppNavigation />
+    <AppNavigation :role="user?.role ?? null" />
 
     <slot />
   </div>
