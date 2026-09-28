@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import ProjectsView from '../views/ProjectsView.vue'
 import ProjectView from '../views/ProjectView.vue'
-
+import MyApplicationsView from '../views/MyApplicationsView.vue'
 const router = createRouter({
   history: createWebHistory(),
 
@@ -29,6 +29,14 @@ const router = createRouter({
       path: '/projects/:id',
       name: 'project',
       component: ProjectView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/applications',
+      name: 'applications',
+      component: MyApplicationsView,
       meta: {
         requiresAuth: true,
       },

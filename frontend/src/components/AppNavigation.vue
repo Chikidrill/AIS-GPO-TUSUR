@@ -1,3 +1,5 @@
+
+
 <template>
   <nav class="app-navigation">
     <div class="app-navigation__inner">
@@ -8,13 +10,12 @@
         Каталог проектов
       </RouterLink>
 
-      <button
+      <RouterLink
         class="app-navigation__item"
-        type="button"
-        aria-disabled="true"
-        >
+        to="/applications"
+      >
         Мои заявки
-        </button>
+      </RouterLink>
     </div>
   </nav>
 </template>

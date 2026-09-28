@@ -20,7 +20,7 @@ defineProps<{
         "
         class="project-card__places"
       >
-        {{ project.occupiedPlaces }} из {{ project.totalPlaces }} мест
+        Занято {{ project.occupiedPlaces }} из {{ project.totalPlaces }} мест
       </span>
     </div>
 
