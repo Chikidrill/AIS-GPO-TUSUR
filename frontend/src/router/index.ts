@@ -39,6 +39,7 @@ const router = createRouter({
       component: MyApplicationsView,
       meta: {
         requiresAuth: true,
+        roles: ['STUDENT'],
       },
     },
   ],
@@ -46,9 +47,22 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const token = localStorage.getItem('accessToken')
+  const role = localStorage.getItem('role')
 
   if (to.meta.requiresAuth && !token) {
     return '/login'
+  }
+
+  if (
+    to.meta.roles &&
+    (
+      !role ||
+      !to.meta.roles.includes(
+        role as 'ADMIN' | 'TEACHER' | 'STUDENT'
+      )
+    )
+  ) {
+    return '/projects'
   }
 })
 
