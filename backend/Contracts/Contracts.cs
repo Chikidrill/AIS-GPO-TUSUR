@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿    using System.ComponentModel.DataAnnotations;
 using AisGpo.Api.Domain;
 
 namespace AisGpo.Api.Contracts;
@@ -29,6 +29,18 @@ public sealed record CreateProjectRequest(
     [Range(1, int.MaxValue)] int? TotalPlaces,
     long? SupervisorId);
 
+public sealed record UpdateProjectRequest(
+    [MaxLength(50)] string? Code,
+    [Required, MaxLength(255)] string Name,
+    [MaxLength(255)] string? Faculty,
+    [Required, MaxLength(255)] string Department,
+    [MaxLength(10000)] string? Description,
+    [MaxLength(10000)] string? Goal,
+    [MaxLength(255)] string? Direction,
+    [Range(1, 20)] int? Semester,
+    string[]? Competencies,
+    [Range(1, int.MaxValue)] int? TotalPlaces);
+
 public sealed record ProjectResponse(
     long Id,
     string? Code,
@@ -45,6 +57,16 @@ public sealed record ProjectResponse(
     string? SupervisorName,
     int OccupiedPlaces,
     int? TotalPlaces);
+
+public sealed record UpdateProjectSupervisorRequest(
+    long? SupervisorId);
+
+public sealed record UpdateProjectStatusRequest(
+    ProjectStatus Status);
+
+public sealed record TeacherResponse(
+    long Id,
+    string FullName);
 
 public sealed record StudentProfileResponse(
     string? GroupNumber,
@@ -68,6 +90,19 @@ public sealed record ApplicationResponse(
     DateTimeOffset? ReviewedAt,
     string? RejectionReason);
 
+public sealed record AdminApplicationResponse(
+    long Id,
+    long StudentId,
+    string StudentName,
+    string? GroupNumber,
+    long ProjectId,
+    string ProjectName,
+    ApplicationStatus Status,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? TakenForReviewAt,
+    DateTimeOffset? ReviewedAt,
+    string? RejectionReason);
+
 public sealed record RejectApplicationRequest([MaxLength(4000)] string? Reason);
 
 public sealed record ParticipantResponse(
@@ -80,7 +115,18 @@ public sealed record ProjectParticipantResponse(
     string? GroupNumber,
     string? Competencies,
     DateTimeOffset JoinedAt);
-    
+
+public sealed record AdminParticipantResponse(
+    long StudentId,
+    string StudentName,
+    string? GroupNumber,
+    long ProjectId,
+    string? ProjectCode,
+    string ProjectName,
+    string? Faculty,
+    string Department,
+    DateTimeOffset JoinedAt);
+
 public sealed record MyProjectResponse(
     long Id,
     string Name,
