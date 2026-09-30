@@ -94,7 +94,43 @@ public sealed class ParticipationApplicationService(AppDbContext db)
             .ToList();
     }
 
-    public async Task<IReadOnlyList<ApplicationResponse>> ListForAdminAsync(
+    public async Task CancelAsync(
+    long id,
+    long studentId,
+    CancellationToken ct)
+    {
+        var application = await db.ParticipationApplications
+            .SingleOrDefaultAsync(
+                x => x.Id == id,
+                ct)
+            ?? throw new ApiException(
+                StatusCodes.Status404NotFound,
+                "APPLICATION_NOT_FOUND",
+                "Participation application not found.");
+
+        if (application.StudentId != studentId)
+        {
+            throw new ApiException(
+                StatusCodes.Status403Forbidden,
+                "APPLICATION_ACCESS_DENIED",
+                "Student can only cancel their own application.");
+        }
+
+        if (application.Status != ApplicationStatus.CREATED &&
+            application.Status != ApplicationStatus.UNDER_REVIEW)
+        {
+            throw new ApiException(
+                StatusCodes.Status409Conflict,
+                "INVALID_APPLICATION_STATUS",
+                "Only CREATED or UNDER_REVIEW application can be cancelled.");
+        }
+
+        application.Status = ApplicationStatus.CANCELLED;
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<AdminApplicationResponse>> ListForAdminAsync(
         ApplicationStatus? status,
         CancellationToken ct)
     {
@@ -111,8 +147,38 @@ public sealed class ParticipationApplicationService(AppDbContext db)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(ct);
 
+        var studentIds = items
+    .Select(x => x.StudentId)
+    .Distinct()
+    .ToList();
+
+        var profiles = await db.StudentProfiles
+            .AsNoTracking()
+            .Where(x => studentIds.Contains(x.UserId))
+            .ToDictionaryAsync(
+                x => x.UserId,
+                ct);
+
         return items
-            .Select(Map)
+            .Select(x =>
+            {
+                profiles.TryGetValue(
+                    x.StudentId,
+                    out var profile);
+
+                return new AdminApplicationResponse(
+                    x.Id,
+                    x.StudentId,
+                    x.Student.FullName,
+                    profile?.GroupNumber,
+                    x.ProjectId,
+                    x.Project.Name,
+                    x.Status,
+                    x.CreatedAt,
+                    x.TakenForReviewAt,
+                    x.ReviewedAt,
+                    x.RejectionReason);
+            })
             .ToList();
     }
 
