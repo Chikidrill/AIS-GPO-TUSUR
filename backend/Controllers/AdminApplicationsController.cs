@@ -13,7 +13,7 @@ namespace AisGpo.Api.Controllers;
 public sealed class AdminApplicationsController(ParticipationApplicationService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ApplicationResponse>>> GetAll([FromQuery] ApplicationStatus? status, CancellationToken ct) =>
+    public async Task<ActionResult<IReadOnlyList<AdminApplicationResponse>>> GetAll([FromQuery] ApplicationStatus? status, CancellationToken ct) =>
         Ok(await service.ListForAdminAsync(status, ct));
 
     [HttpPost("{id:long}/take-for-review")]

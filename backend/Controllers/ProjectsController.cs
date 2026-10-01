@@ -159,6 +159,213 @@ public sealed class ProjectsController(AppDbContext db) : ControllerBase
                 supervisorOverride: supervisor));
     }
 
+    [HttpPatch("{projectId:long}")]
+    [Authorize(Roles = nameof(UserRole.ADMIN))]
+    public async Task<ActionResult<ProjectResponse>> Update(
+    long projectId,
+    UpdateProjectRequest request,
+    CancellationToken ct)
+    {
+        var project = await db.Projects
+            .Include(x => x.Supervisor)
+            .SingleOrDefaultAsync(
+                x => x.Id == projectId,
+                ct);
+
+        if (project is null)
+            return NotFound();
+
+        var code = Normalize(request.Code);
+
+        if (code is not null &&
+            await db.Projects.AnyAsync(
+                x =>
+                    x.Id != projectId &&
+                    x.Code == code,
+                ct))
+        {
+            throw new ApiException(
+                StatusCodes.Status409Conflict,
+                "PROJECT_CODE_ALREADY_EXISTS",
+                "Project code already exists.");
+        }
+
+        if (request.TotalPlaces is not null)
+        {
+            var occupiedPlaces = await db.ProjectMemberships
+                .CountAsync(
+                    x =>
+                        x.ProjectId == projectId &&
+                        x.Status == MembershipStatus.ACTIVE,
+                    ct);
+
+            if (request.TotalPlaces.Value < occupiedPlaces)
+            {
+                throw new ApiException(
+                    StatusCodes.Status409Conflict,
+                    "PROJECT_CAPACITY_TOO_SMALL",
+                    "Project capacity cannot be less than the current number of active participants.");
+            }
+        }
+
+        var competencies = request.Competencies?
+            .Select(x => x.Trim())
+            .Where(x => x.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        project.Code = code;
+        project.Name = request.Name.Trim();
+        project.Faculty = Normalize(request.Faculty);
+        project.Department = request.Department.Trim();
+        project.Description = Normalize(request.Description);
+        project.Goal = Normalize(request.Goal);
+        project.Direction = Normalize(request.Direction);
+        project.Semester = request.Semester;
+        project.Competencies = competencies;
+        project.TotalPlaces = request.TotalPlaces;
+        project.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await db.SaveChangesAsync(ct);
+
+        var occupied = await db.ProjectMemberships
+            .AsNoTracking()
+            .CountAsync(
+                x =>
+                    x.ProjectId == projectId &&
+                    x.Status == MembershipStatus.ACTIVE,
+                ct);
+
+        return Ok(MapProject(project, occupied));
+    }
+
+    [HttpPatch("{projectId:long}/supervisor")]
+    [Authorize(Roles = nameof(UserRole.ADMIN))]
+    public async Task<ActionResult<ProjectResponse>> UpdateSupervisor(
+    long projectId,
+    UpdateProjectSupervisorRequest request,
+    CancellationToken ct)
+    {
+        var project = await db.Projects
+            .Include(x => x.Supervisor)
+            .SingleOrDefaultAsync(
+                x => x.Id == projectId,
+                ct);
+
+        if (project is null)
+            return NotFound();
+
+        User? supervisor = null;
+
+        if (request.SupervisorId is not null)
+        {
+            supervisor = await db.Users
+                .SingleOrDefaultAsync(
+                    x =>
+                        x.Id == request.SupervisorId.Value &&
+                        x.Role == UserRole.TEACHER,
+                    ct);
+
+            if (supervisor is null)
+            {
+                throw new ApiException(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_SUPERVISOR",
+                    "Project supervisor must be an existing teacher.");
+            }
+        }
+
+        project.SupervisorId = supervisor?.Id;
+        project.Supervisor = supervisor;
+        project.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await db.SaveChangesAsync(ct);
+
+        var occupiedPlaces = await db.ProjectMemberships
+            .AsNoTracking()
+            .CountAsync(
+                x =>
+                    x.ProjectId == projectId &&
+                    x.Status == MembershipStatus.ACTIVE,
+                ct);
+
+        return Ok(
+            MapProject(
+                project,
+                occupiedPlaces,
+                supervisor));
+    }
+
+    [HttpPatch("{projectId:long}/status")]
+    [Authorize(Roles = nameof(UserRole.ADMIN))]
+    public async Task<ActionResult<ProjectResponse>> UpdateStatus(
+    long projectId,
+    UpdateProjectStatusRequest request,
+    CancellationToken ct)
+    {
+        var project = await db.Projects
+            .Include(x => x.Supervisor)
+            .SingleOrDefaultAsync(
+                x => x.Id == projectId,
+                ct);
+
+        if (project is null)
+            return NotFound();
+
+        project.Status = request.Status;
+        project.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await db.SaveChangesAsync(ct);
+
+        var occupiedPlaces = await db.ProjectMemberships
+            .AsNoTracking()
+            .CountAsync(
+                x =>
+                    x.ProjectId == projectId &&
+                    x.Status == MembershipStatus.ACTIVE,
+                ct);
+
+        return Ok(MapProject(project, occupiedPlaces));
+    }
+
+    [HttpDelete("{projectId:long}")]
+    [Authorize(Roles = nameof(UserRole.ADMIN))]
+    public async Task<IActionResult> Delete(
+    long projectId,
+    CancellationToken ct)
+    {
+        var project = await db.Projects
+            .SingleOrDefaultAsync(
+                x => x.Id == projectId,
+                ct);
+
+        if (project is null)
+            return NotFound();
+
+        var hasApplications = await db.ParticipationApplications
+            .AnyAsync(
+                x => x.ProjectId == projectId,
+                ct);
+
+        var hasMemberships = await db.ProjectMemberships
+            .AnyAsync(
+                x => x.ProjectId == projectId,
+                ct);
+
+        if (hasApplications || hasMemberships)
+        {
+            throw new ApiException(
+                StatusCodes.Status409Conflict,
+                "PROJECT_HAS_DEPENDENCIES",
+                "Project cannot be deleted because it has applications or participants.");
+        }
+
+        db.Projects.Remove(project);
+        await db.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
     [HttpGet("{projectId:long}/participants")]
     [Authorize(Roles = nameof(UserRole.TEACHER))]
     public async Task<ActionResult<IReadOnlyList<ProjectParticipantResponse>>> GetParticipants(
