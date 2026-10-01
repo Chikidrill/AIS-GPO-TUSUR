@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 import { http } from '../api/http'
 import AppLayout from '../components/AppLayout.vue'
@@ -19,7 +19,33 @@ interface ApiError {
   code?: string
 }
 
+interface ProjectResponse {
+  id: number
+  code: string | null
+  name: string
+  faculty: string | null
+  department: string
+  description: string | null
+  goal: string | null
+  direction: string | null
+  semester: number | null
+  competencies: string[]
+  totalPlaces: number | null
+  status: ProjectStatus
+}
+
+type ProjectStatus =
+  | 'DRAFT'
+  | 'OPEN'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'ARCHIVED'
+
 const router = useRouter()
+const route = useRoute()
+
+const projectId = Number(route.params.id)
+const isEditMode = !Number.isNaN(projectId)
 
 const currentUser = ref<CurrentUser | null>(null)
 
@@ -36,13 +62,39 @@ const totalPlaces = ref<number | null>(null)
 
 const submitting = ref(false)
 const error = ref('')
+const projectStatus = ref<ProjectStatus>('OPEN')
+const initialProjectStatus = ref<ProjectStatus>('OPEN')
+
 
 async function loadCurrentUser() {
   const { data } = await http.get<CurrentUser>('/me')
   currentUser.value = data
 }
 
-async function createProject() {
+async function loadProject() {
+  if (!isEditMode) {
+    return
+  }
+
+  const { data } = await http.get<ProjectResponse>(
+    `/projects/${projectId}`
+  )
+
+  code.value = data.code ?? ''
+  name.value = data.name
+  faculty.value = data.faculty ?? ''
+  department.value = data.department
+  description.value = data.description ?? ''
+  goal.value = data.goal ?? ''
+  direction.value = data.direction ?? ''
+  semester.value = data.semester
+  competencies.value = data.competencies.join(', ')
+  totalPlaces.value = data.totalPlaces
+  projectStatus.value = data.status
+  initialProjectStatus.value = data.status
+}
+
+async function saveProject() {
   error.value = ''
 
   if (!name.value.trim()) {
@@ -57,37 +109,67 @@ async function createProject() {
 
   submitting.value = true
 
+  const payload = {
+    code: code.value.trim() || null,
+    name: name.value.trim(),
+    faculty: faculty.value.trim() || null,
+    department: department.value.trim(),
+    description: description.value.trim() || null,
+    goal: goal.value.trim() || null,
+    direction: direction.value.trim() || null,
+    semester: semester.value,
+    competencies: competencies.value
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean),
+    totalPlaces: totalPlaces.value,
+  }
+
   try {
-    await http.post('/projects', {
-      code: code.value.trim() || null,
-      name: name.value.trim(),
-      faculty: faculty.value.trim() || null,
-      department: department.value.trim(),
-      description: description.value.trim() || null,
-      goal: goal.value.trim() || null,
-      direction: direction.value.trim() || null,
-      semester: semester.value,
-      competencies: competencies.value
-        .split(',')
-        .map(item => item.trim())
-        .filter(Boolean),
-      totalPlaces: totalPlaces.value,
-      supervisorId: null,
-    })
+    if (isEditMode) {
+      await http.patch(
+        `/projects/${projectId}`,
+        payload
+      )
+
+      if (projectStatus.value !== initialProjectStatus.value) {
+        await http.patch(
+          `/projects/${projectId}/status`,
+          {
+            status: projectStatus.value,
+          }
+        )
+      }
+    } else {
+      await http.post('/projects', {
+        ...payload,
+        supervisorId: null,
+      })
+    }
 
     await router.push('/admin/projects')
   } catch (err) {
     if (axios.isAxiosError<ApiError>(err)) {
       switch (err.response?.data?.code) {
         case 'PROJECT_CODE_ALREADY_EXISTS':
-          error.value = 'Проект с таким кодом уже существует.'
+          error.value =
+            'Проект с таким кодом уже существует.'
+          break
+
+        case 'PROJECT_CAPACITY_TOO_SMALL':
+          error.value =
+            'Количество мест не может быть меньше текущего числа участников.'
           break
 
         default:
-          error.value = 'Не удалось создать проект.'
+          error.value = isEditMode
+            ? 'Не удалось сохранить изменения.'
+            : 'Не удалось создать проект.'
       }
     } else {
-      error.value = 'Не удалось создать проект.'
+      error.value = isEditMode
+        ? 'Не удалось сохранить изменения.'
+        : 'Не удалось создать проект.'
     }
   } finally {
     submitting.value = false
@@ -101,7 +183,16 @@ async function logout() {
   await router.push('/login')
 }
 
-onMounted(loadCurrentUser)
+onMounted(async () => {
+  try {
+    await Promise.all([
+      loadCurrentUser(),
+      loadProject(),
+    ])
+  } catch {
+    error.value = 'Не удалось загрузить данные проекта.'
+  }
+})
 </script>
 
 <template>
@@ -112,10 +203,16 @@ onMounted(loadCurrentUser)
     <main class="project-create-content">
       <header class="project-create-header">
         <div>
-          <h1>Создание проекта</h1>
+          <h1>
+            {{ isEditMode ? 'Редактирование проекта' : 'Создание проекта' }}
+          </h1>
 
           <p>
-            Заполните информацию о проекте ГПО.
+            {{
+              isEditMode
+                ? 'Изменение информации о проекте ГПО.'
+                : 'Заполните информацию о проекте ГПО.'
+            }}
           </p>
         </div>
 
@@ -129,7 +226,7 @@ onMounted(loadCurrentUser)
 
       <form
         class="project-create-form"
-        @submit.prevent="createProject"
+        @submit.prevent="saveProject"
       >
         <section class="project-create-section">
           <h2>Основная информация</h2>
@@ -214,7 +311,34 @@ onMounted(loadCurrentUser)
                 placeholder="8"
               >
             </label>
+            <label
+              v-if="isEditMode"
+              class="project-create-field"
+            >
+              <span>Статус проекта</span>
 
+              <select v-model="projectStatus">
+                <option value="DRAFT">
+                  Черновик
+                </option>
+
+                <option value="OPEN">
+                  Идёт набор
+                </option>
+
+                <option value="IN_PROGRESS">
+                  В работе
+                </option>
+
+                <option value="COMPLETED">
+                  Завершён
+                </option>
+
+                <option value="ARCHIVED">
+                  Архив
+                </option>
+              </select>
+            </label>
             <label class="project-create-field">
               <span>Компетенции</span>
 
@@ -273,7 +397,19 @@ onMounted(loadCurrentUser)
             type="submit"
             :disabled="submitting"
           >
-            {{ submitting ? 'Создание...' : 'Создать проект' }}
+            {{
+              submitting
+                ? (
+                    isEditMode
+                      ? 'Сохранение...'
+                      : 'Создание...'
+                  )
+                : (
+                    isEditMode
+                      ? 'Сохранить изменения'
+                      : 'Создать проект'
+                  )
+            }}
           </button>
         </div>
       </form>

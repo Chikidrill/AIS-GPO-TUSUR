@@ -7,7 +7,7 @@ import MyApplicationsView from '../views/MyApplicationsView.vue'
 import AdminProjectsView from '../views/AdminProjectsView.vue'
 import AdminProjectCreateView from '../views/AdminProjectCreateView.vue'
 import AdminApplicationsView from '../views/AdminApplicationsView.vue'
-
+import AdminParticipantsView from '../views/AdminParticipantsView.vue'
 const router = createRouter({
   history: createWebHistory(),
 
@@ -65,6 +65,15 @@ const router = createRouter({
       }
     },
     {
+      path: '/admin/projects/:id/edit',
+      name: 'admin-project-edit',
+      component: AdminProjectCreateView,
+      meta: {
+        requiresAuth: true,
+        roles: ['ADMIN'],
+      },
+    },
+    {
       path: '/admin/applications',
       name: 'admin-applications',
       component: AdminApplicationsView,
@@ -72,7 +81,16 @@ const router = createRouter({
         requiresAuth: true,
         roles: ['ADMIN']
       }
-    }
+    },
+    {
+      path: '/admin/participants',
+      name: 'admin-participants',
+      component: AdminParticipantsView,
+      meta: {
+        requiresAuth: true,
+        roles: ['ADMIN'],
+      },
+    },
   ],
 })
 

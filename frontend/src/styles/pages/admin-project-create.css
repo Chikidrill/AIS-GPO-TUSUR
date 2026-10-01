@@ -96,7 +96,8 @@
 }
 
 .project-create-field input,
-.project-create-field textarea {
+.project-create-field textarea,
+.project-create-field select {
   width: 100%;
   padding: 0 13px;
 
@@ -115,7 +116,8 @@
   transition: border-color 0.15s ease;
 }
 
-.project-create-field input {
+.project-create-field input,
+.project-create-field select {
   height: 40px;
 }
 
@@ -127,7 +129,8 @@
 }
 
 .project-create-field input:focus,
-.project-create-field textarea:focus {
+.project-create-field textarea:focus,
+.project-create-field select:focus {
   border-color: var(--color-primary);
 }
 
@@ -187,6 +190,7 @@
 
 .project-create-button--primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
+  color: var(--color-primary);
 }
 
 .project-create-button--secondary {
@@ -204,16 +208,4 @@
 .project-create-button:disabled {
   opacity: 0.6;
   cursor: default;
-}
-
-@media (max-width: 1200px) {
-  .project-create-content {
-    width: calc(100% - 40px);
-  }
-}
-
-@media (max-width: 700px) {
-  .project-create-grid {
-    grid-template-columns: 1fr;
-  }
 }
