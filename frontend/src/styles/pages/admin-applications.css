@@ -1,4 +1,4 @@
-.admin-projects-content {
+.admin-applications-content {
   width: calc(100% - 280px);
   max-width: 1160px;
 
@@ -6,15 +6,11 @@
   padding: 40px 0 56px;
 }
 
-.admin-projects-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
+.admin-applications-header {
   margin-bottom: 24px;
 }
 
-.admin-projects-header h1 {
+.admin-applications-header h1 {
   margin: 0;
 
   color: var(--color-text-primary);
@@ -24,58 +20,23 @@
   line-height: 1.2;
 }
 
-.admin-projects-header p {
+.admin-applications-header p {
   margin: 8px 0 0;
 
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
 
   font-size: 11px;
-  line-height: 1.4;
 }
 
-.admin-projects-header__create {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  min-height: 30px;
-  padding: 0 13px;
-
-  border: 1px solid var(--color-primary);
-  border-radius: 4px;
-
-  background: var(--color-primary);
-  color: #fff;
-
-  font-size: 10px;
-  font-weight: 600;
-  text-decoration: none;
-
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.admin-projects-header__create:hover {
-  background: var(--color-primary-hover);
-  color: var(--color-primary);
-}
-
-.admin-projects-header__create:disabled {
-  opacity: 1;
-  cursor: default;
-}
-
-.admin-projects-filters {
+.admin-applications-filters {
   display: grid;
-  grid-template-columns: 610px 200px 160px 154px;
+  grid-template-columns: 430px 190px 190px 160px 142px;
   gap: 12px;
 
-  width: 100%;
   margin-bottom: 24px;
 }
 
-.admin-projects-filter {
+.admin-applications-filter {
   width: 100%;
   min-width: 0;
   height: 40px;
@@ -85,6 +46,7 @@
 
   border: 1px solid var(--color-border-light);
   border-radius: 6px;
+  outline: none;
 
   background: var(--color-surface);
   color: var(--color-text-primary);
@@ -93,18 +55,22 @@
   font-size: 10.5px;
 }
 
-.admin-projects-filter::placeholder {
+.admin-applications-filter:focus {
+  border-color: var(--color-primary);
+}
+
+.admin-applications-filter::placeholder {
   color: #8f91a1;
 }
 
-.admin-projects-stats {
+.admin-applications-stats {
   display: flex;
   gap: 16px;
 
   margin-bottom: 24px;
 }
 
-.admin-projects-stat {
+.admin-applications-stat {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -121,30 +87,32 @@
   background: var(--color-surface);
 }
 
-.admin-projects-stat span {
+.admin-applications-stat span {
   color: var(--color-text-secondary);
 
   font-size: 11px;
   font-weight: 500;
 }
 
-.admin-projects-stat strong {
-  color: var(--color-primary);
-
+.admin-applications-stat strong {
   font-size: 24px;
   font-weight: 700;
   line-height: 1.2;
 }
 
-.admin-projects-stat .admin-projects-stat__value--open {
-  color: #2e8c47;
-}
-
-.admin-projects-stat .admin-projects-stat__value--warning {
+.admin-applications-stat__review {
   color: #d67a14;
 }
 
-.admin-projects-table {
+.admin-applications-stat__approved {
+  color: #2e8c47;
+}
+
+.admin-applications-stat__rejected {
+  color: #b83838;
+}
+
+.admin-applications-table {
   width: 100%;
   overflow: hidden;
 
@@ -156,28 +124,29 @@
   background: var(--color-surface);
 }
 
-.admin-projects-table__header,
-.admin-projects-table__row {
+.admin-applications-table__header,
+.admin-applications-table__row {
   display: grid;
 
   grid-template-columns:
+    230px
     90px
-    310px
-    130px
+    250px
     110px
-    210px
-    278px;
+    90px
+    150px
+    208px;
 
   padding: 0 16px;
 }
 
-.admin-projects-table__header {
+.admin-applications-table__header {
   height: 36px;
 
   background: #f7f7fb;
 }
 
-.admin-projects-table__header > span {
+.admin-applications-table__header > span {
   display: flex;
   align-items: center;
 
@@ -189,13 +158,13 @@
   font-weight: 600;
 }
 
-.admin-projects-table__row {
+.admin-applications-table__row {
   min-height: 64px;
 
   border-top: 1px solid #ebedf2;
 }
 
-.admin-projects-table__row > span {
+.admin-applications-table__row > span {
   display: flex;
   align-items: center;
 
@@ -209,93 +178,107 @@
   font-size: 9.5px;
 }
 
-.admin-projects-table__code {
-  color: var(--color-primary) !important;
-
-  font-weight: 600;
-}
-
-.admin-projects-table__name {
+.admin-applications-table__student {
   font-weight: 500;
 }
 
-.admin-projects-table__unassigned {
-  color: #d67a14 !important;
+.admin-applications-status {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 6px 10px;
+
+  border-radius: 14px;
+
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.admin-projects-table__actions {
+.admin-applications-status--review {
+  background: #fff5e3;
+  color: #d67a14;
+}
+
+.admin-applications-status--approved {
+  background: #edf8ef;
+  color: #2e8c47;
+}
+
+.admin-applications-status--rejected {
+  background: #fff0f0;
+  color: #b83838;
+}
+
+.admin-applications-status--cancelled {
+  background: #f1f1f4;
+  color: #6e7080;
+}
+
+.admin-applications-table__actions {
   display: flex;
   align-items: center;
   gap: 8px;
 
+  padding-left: 10px;
 }
 
-.admin-projects-table__action {
+.admin-applications-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
   min-height: 32px;
-  padding: 0 13px;
+  padding: 0 12px;
 
-  border: 1px solid var(--color-primary);
   border-radius: 4px;
+
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.admin-applications-action--reject {
+  border: 1px solid #b83838;
 
   background: #fff;
-  color: var(--color-primary);
-
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+  color: #b83838;
 }
 
-.admin-projects-table__action-delete{
-      display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  min-height: 32px;
-  padding: 0 13px;
-
-  border: 1px solid var(--color-error);
-  border-radius: 4px;
-
-  background: var(--color-error);
-  color: var(--color-primary-hover);
-
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+.admin-applications-action--reject:hover:not(:disabled) {
+  background: #b83838;
+  color: #fff;
 }
 
-.admin-projects-table__action:hover:not(:disabled) {
+.admin-applications-action--approve {
+  border: 1px solid var(--color-primary);
+
   background: var(--color-primary);
   color: #fff;
 }
 
-.admin-projects-table__action-delete:hover:not(:disabled) {
+.admin-applications-action--approve:hover:not(:disabled) {
   background: var(--color-primary-hover);
-  color: var(--color-error);
 }
 
-.admin-projects-table__action:disabled {
-  opacity: 1;
+.admin-applications-action:disabled {
+  opacity: 0.6;
   cursor: default;
 }
 
-.admin-projects-state {
+.admin-applications-table__processed {
+  color: var(--color-text-muted);
+
+  font-size: 9.5px;
+}
+
+.admin-applications-state {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -316,6 +299,16 @@
   font-weight: 500;
 }
 
-.admin-projects-state--error {
+.admin-applications-state--error {
   color: #b83838;
+}
+
+@media (max-width: 1200px) {
+  .admin-applications-content {
+    width: calc(100% - 40px);
+  }
+
+  .admin-applications-table {
+    overflow-x: auto;
+  }
 }

@@ -6,6 +6,7 @@ import ProjectView from '../views/ProjectView.vue'
 import MyApplicationsView from '../views/MyApplicationsView.vue'
 import AdminProjectsView from '../views/AdminProjectsView.vue'
 import AdminProjectCreateView from '../views/AdminProjectCreateView.vue'
+import AdminApplicationsView from '../views/AdminApplicationsView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -58,6 +59,15 @@ const router = createRouter({
       path: '/admin/projects/create',
       name: 'admin-project-create',
       component: AdminProjectCreateView,
+      meta:{
+        requiresAuth: true,
+        roles: ['ADMIN']
+      }
+    },
+    {
+      path: '/admin/applications',
+      name: 'admin-applications',
+      component: AdminApplicationsView,
       meta:{
         requiresAuth: true,
         roles: ['ADMIN']

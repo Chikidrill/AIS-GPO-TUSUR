@@ -56,7 +56,7 @@ const navigationItems: NavigationItem[] = [
   },
   {
     label: 'Заявки',
-    to: '/applications',
+    to: '/admin/applications',
     roles: ['ADMIN'],
   },
   {

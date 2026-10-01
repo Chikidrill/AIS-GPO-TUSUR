@@ -335,6 +335,12 @@ onMounted(loadPage)
             >
               Назначить
             </button>
+            <button
+                class="admin-projects-table__action-delete"
+                type="button"
+            > 
+                Удалить
+            </button>
           </div>
         </div>
       </div>
