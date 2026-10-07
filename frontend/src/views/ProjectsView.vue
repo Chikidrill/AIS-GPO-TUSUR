@@ -65,6 +65,10 @@ const filteredProjects = computed(() => {
   const query = search.value.trim().toLowerCase()
   
   return projects.value.filter((project) => {
+    const matchesStatus =
+    project.status === 'OPEN' ||
+    project.status === 'IN_PROGRESS'
+    
     const matchesSearch =
     !query ||
     project.name.toLowerCase().includes(query) ||
@@ -85,7 +89,8 @@ const filteredProjects = computed(() => {
     matchesSearch &&
     matchesFaculty &&
     matchesDepartment &&
-    matchesCompetency
+    matchesCompetency &&
+    matchesStatus
     )
   })
 })
