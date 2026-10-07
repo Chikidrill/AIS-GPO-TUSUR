@@ -4,13 +4,17 @@ import LoginView from '../views/LoginView.vue'
 import ProjectsView from '../views/ProjectsView.vue'
 import ProjectView from '../views/ProjectView.vue'
 import MyApplicationsView from '../views/MyApplicationsView.vue'
+import AdminProjectsView from '../views/AdminProjectsView.vue'
+import AdminProjectCreateView from '../views/AdminProjectCreateView.vue'
+import AdminApplicationsView from '../views/AdminApplicationsView.vue'
+import AdminParticipantsView from '../views/AdminParticipantsView.vue'
 const router = createRouter({
   history: createWebHistory(),
 
   routes: [
     {
       path: '/',
-      redirect: '/projects',
+      redirect: '/login',
     },
     {
       path: '/login',
@@ -40,6 +44,51 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         roles: ['STUDENT'],
+      },
+    },
+    {
+      path: '/admin/projects',
+      name: 'admin-projects',
+      component: AdminProjectsView,
+      meta: {
+        requiresAuth: true,
+        roles: ['ADMIN'],
+      },
+    },
+    {
+      path: '/admin/projects/create',
+      name: 'admin-project-create',
+      component: AdminProjectCreateView,
+      meta:{
+        requiresAuth: true,
+        roles: ['ADMIN']
+      }
+    },
+    {
+      path: '/admin/projects/:id/edit',
+      name: 'admin-project-edit',
+      component: AdminProjectCreateView,
+      meta: {
+        requiresAuth: true,
+        roles: ['ADMIN'],
+      },
+    },
+    {
+      path: '/admin/applications',
+      name: 'admin-applications',
+      component: AdminApplicationsView,
+      meta:{
+        requiresAuth: true,
+        roles: ['ADMIN']
+      }
+    },
+    {
+      path: '/admin/participants',
+      name: 'admin-participants',
+      component: AdminParticipantsView,
+      meta: {
+        requiresAuth: true,
+        roles: ['ADMIN'],
       },
     },
   ],

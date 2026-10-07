@@ -56,14 +56,14 @@ const navigationItems: NavigationItem[] = [
   },
   {
     label: 'Заявки',
-    to: '/applications',
+    to: '/admin/applications',
     roles: ['ADMIN'],
   },
   {
     label: 'Участники',
-    to: '/participants',
+    to: '/admin/participants',
     roles: ['ADMIN'],
-  }
+  },
 ]
 
 const visibleNavigationItems = computed(() => {
