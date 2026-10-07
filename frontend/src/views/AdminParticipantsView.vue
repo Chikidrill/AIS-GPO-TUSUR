@@ -285,6 +285,7 @@ onMounted(loadPage)
           <span>Подразд.</span>
           <span>Кафедра</span>
           <span>Статус</span>
+          <span>Действия</span>
         </div>
 
         <div
@@ -315,6 +316,13 @@ onMounted(loadPage)
           <span class="admin-participants-table__status">
             Участник
           </span>
+          <button
+            class="admin-participants-table__action admin-participants-table__action--exclude"
+            type="button"
+            title="Исключить"
+          >
+            Исключить
+          </button>
         </div>
       </div>
     </main>
