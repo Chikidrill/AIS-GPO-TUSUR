@@ -401,7 +401,7 @@ onMounted(() => {
     </div>
   </main>
 </div>
-  </AppLayout>
+</AppLayout>
 </template>
 
 <style
