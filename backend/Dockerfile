@@ -1,3 +1,16 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS development
+
+WORKDIR /src
+
+COPY AisGpo.Api.csproj ./
+RUN dotnet restore
+
+COPY . .
+
+EXPOSE 8080
+
+CMD ["dotnet", "watch", "run", "--no-launch-profile"]
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
 WORKDIR /src

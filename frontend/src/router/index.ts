@@ -8,6 +8,7 @@ import AdminProjectsView from '../views/AdminProjectsView.vue'
 import AdminProjectCreateView from '../views/AdminProjectCreateView.vue'
 import AdminApplicationsView from '../views/AdminApplicationsView.vue'
 import AdminParticipantsView from '../views/AdminParticipantsView.vue'
+import TeachersProjectsView from '../views/TeachersProjectsView.vue'
 const router = createRouter({
   history: createWebHistory(),
 
@@ -90,6 +91,15 @@ const router = createRouter({
         requiresAuth: true,
         roles: ['ADMIN'],
       },
+    },
+    {
+      path: '/myprojects',
+      name: 'teacher-projects',
+      component: TeachersProjectsView,
+      meta: {
+        requiresAuth: true,
+        roles: ['TEACHER'],
+      }
     },
   ],
 })
