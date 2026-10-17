@@ -143,6 +143,8 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<MeProjectService>();
 
+builder.Services.AddScoped<StudentWorkService>();
+
 // Завершаем построение приложения.
 var app = builder.Build();
 
