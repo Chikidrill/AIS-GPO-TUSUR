@@ -8,6 +8,7 @@ using AisGpo.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using AisGpo.Api.Storage;
 
 // Создаём builder ASP.NET Core приложения.
 // Через него регистрируются конфигурация,
@@ -108,6 +109,27 @@ builder.Services
 
 // Включаем механизм авторизации ASP.NET Core.
 builder.Services.AddAuthorization();
+
+// Настройки файлового хранилища
+// для работ студентов.
+builder.Services.Configure<FileStorageOptions>(
+    builder.Configuration.GetSection(
+        FileStorageOptions.SectionName));
+
+// Бизнес-код работает через IFileStorage,
+// а конкретной реализацией пока является
+// локальное файловое хранилище.
+builder.Services.AddSingleton<
+    IFileStorage,
+    LocalFileStorage>();
+
+builder.Services.Configure<FileStorageOptions>(
+    builder.Configuration.GetSection(
+        FileStorageOptions.SectionName));
+
+builder.Services.AddSingleton<
+    IFileStorage,
+    LocalFileStorage>();
 
 // Регистрируем бизнес-сервисы.
 //
