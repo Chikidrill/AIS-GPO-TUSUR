@@ -39,6 +39,44 @@ public sealed class WorkQueryService(
     }
 
     /// <summary>
+    /// Возвращает все работы для административного просмотра.
+    /// </summary>
+    public async Task<IReadOnlyList<WorkSummaryResponse>>
+        ListForAdminAsync(
+            CancellationToken ct)
+    {
+        var works = await db.StudentWorks
+            .AsNoTracking()
+            .Include(x => x.Project)
+            .Include(x => x.Student)
+            .Include(x => x.Revisions)
+            .OrderByDescending(x => x.UpdatedAt)
+            .ToListAsync(ct);
+
+        return await MapSummariesAsync(
+            works,
+            ct);
+    }
+
+    /// <summary>
+    /// Возвращает конкретную работу
+    /// для административного read-only просмотра.
+    /// </summary>
+    public async Task<WorkDetailsResponse>
+        GetForAdminAsync(
+            long workId,
+            CancellationToken ct)
+    {
+        var work = await GetDetailsEntityAsync(
+            workId,
+            ct);
+
+        return await MapDetailsAsync(
+            work,
+            ct);
+    }
+
+    /// <summary>
     /// Возвращает работы студентов конкретного проекта
     /// для преподавателя-руководителя.
     /// </summary>

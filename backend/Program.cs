@@ -147,6 +147,8 @@ builder.Services.AddScoped<StudentWorkService>();
 
 builder.Services.AddScoped<WorkQueryService>();
 
+builder.Services.AddScoped<WorkFileService>();
+
 // Завершаем построение приложения.
 var app = builder.Build();
 
