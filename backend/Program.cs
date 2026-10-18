@@ -153,6 +153,8 @@ builder.Services.AddScoped<WorkReviewService>();
 
 builder.Services.AddScoped<WorkResubmissionService>();
 
+builder.Services.AddScoped<ProjectMembershipService>();
+
 // Завершаем построение приложения.
 var app = builder.Build();
 
