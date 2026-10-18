@@ -149,6 +149,10 @@ builder.Services.AddScoped<WorkQueryService>();
 
 builder.Services.AddScoped<WorkFileService>();
 
+builder.Services.AddScoped<WorkReviewService>();
+
+builder.Services.AddScoped<WorkResubmissionService>();
+
 // Завершаем построение приложения.
 var app = builder.Build();
 

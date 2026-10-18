@@ -8,21 +8,21 @@ using Microsoft.AspNetCore.Mvc;
 namespace AisGpo.Api.Controllers;
 
 /// <summary>
-/// Чтение работ преподавателем-руководителем проекта.
+/// Работа преподавателя с работами студентов
+/// в проектах, которыми он руководит.
 /// </summary>
 [ApiController]
 [Authorize(Roles = nameof(UserRole.TEACHER))]
 [Route("api/v1/projects/{projectId:long}/works")]
 public sealed class TeacherWorksController(
-    WorkQueryService service) : ControllerBase
+    WorkQueryService queryService,
+    WorkReviewService reviewService) : ControllerBase
 {
     /// <summary>
     /// Возвращает работы студентов указанного проекта.
     /// </summary>
     /// <remarks>
     /// GET /api/v1/projects/{projectId}/works
-    ///
-    /// Доступ разрешён только руководителю проекта.
     /// </remarks>
     [HttpGet]
     public async Task<ActionResult<
@@ -31,7 +31,7 @@ public sealed class TeacherWorksController(
             CancellationToken ct)
     {
         var result =
-            await service.ListForTeacherAsync(
+            await queryService.ListForTeacherAsync(
                 User.GetUserId(),
                 projectId,
                 ct);
@@ -53,10 +53,64 @@ public sealed class TeacherWorksController(
         CancellationToken ct)
     {
         var result =
-            await service.GetForTeacherAsync(
+            await queryService.GetForTeacherAsync(
                 User.GetUserId(),
                 projectId,
                 workId,
+                ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Принимает последнюю отправленную версию работы.
+    /// </summary>
+    /// <remarks>
+    /// POST /api/v1/projects/{projectId}/works/{workId}/accept
+    ///
+    /// Оценка и комментарий необязательны.
+    /// </remarks>
+    [HttpPost("{workId:long}/accept")]
+    public async Task<ActionResult<WorkDetailsResponse>> Accept(
+        long projectId,
+        long workId,
+        AcceptWorkRequest request,
+        CancellationToken ct)
+    {
+        var result =
+            await reviewService.AcceptAsync(
+                User.GetUserId(),
+                projectId,
+                workId,
+                request,
+                ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Возвращает последнюю версию работы
+    /// студенту на доработку.
+    /// </summary>
+    /// <remarks>
+    /// POST /api/v1/projects/{projectId}/works/{workId}/request-revision
+    ///
+    /// Комментарий преподавателя обязателен.
+    /// </remarks>
+    [HttpPost("{workId:long}/request-revision")]
+    public async Task<ActionResult<WorkDetailsResponse>>
+        RequestRevision(
+            long projectId,
+            long workId,
+            RequestWorkRevisionRequest request,
+            CancellationToken ct)
+    {
+        var result =
+            await reviewService.RequestRevisionAsync(
+                User.GetUserId(),
+                projectId,
+                workId,
+                request,
                 ct);
 
         return Ok(result);
