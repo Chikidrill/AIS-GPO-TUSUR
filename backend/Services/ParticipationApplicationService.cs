@@ -395,6 +395,17 @@ public sealed class ParticipationApplicationService(
                 "Only UNDER_REVIEW application can be approved.");
         }
 
+        // Проект мог быть закрыт уже после того,
+        // как студент подал заявку или администратор
+        // взял её на рассмотрение.
+        if (app.Project.Status != ProjectStatus.OPEN)
+        {
+            throw new ApiException(
+                StatusCodes.Status409Conflict,
+                "PROJECT_NOT_OPEN",
+                "Application cannot be approved because the project is not open.");
+        }
+
         // Повторно проверяем участие непосредственно
         // перед одобрением, поскольку состояние базы
         // могло измениться после подачи заявки.
