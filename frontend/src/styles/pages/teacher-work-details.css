@@ -1,0 +1,245 @@
+.teacher-work-details-content {
+  width: calc(100% - 48px);
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 40px 0 56px;
+}
+
+.teacher-work-details-back {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.teacher-work-details-header {
+  margin-bottom: 24px;
+}
+
+.teacher-work-details-header h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.teacher-work-details-header p {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.teacher-work-details-card {
+  margin-bottom: 20px;
+  padding: 22px;
+
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.teacher-work-details-card h2 {
+  margin: 0 0 14px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.teacher-work-details-card h3 {
+  margin: 24px 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.teacher-work-details-card p {
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.teacher-work-details-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.teacher-work-details-status {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 14px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.teacher-work-details-status--submitted {
+  background: #fff3e6;
+  color: #d67a14;
+}
+
+.teacher-work-details-status--needs_revision {
+  background: #fff1f1;
+  color: #b83838;
+}
+
+.teacher-work-details-status--accepted {
+  background: #ebfaed;
+  color: #2e8c47;
+}
+
+.teacher-work-details-select,
+.teacher-work-details-input,
+.teacher-work-details-textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.teacher-work-details-select {
+  min-width: 150px;
+}
+
+.teacher-work-details-input {
+  display: block;
+  width: 180px;
+  margin: 8px 0 18px;
+}
+
+.teacher-work-details-textarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  margin: 8px 0 20px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.teacher-work-details-card label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.teacher-work-details-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.teacher-work-details-date,
+.teacher-work-details-muted {
+  color: var(--color-text-secondary);
+}
+
+.teacher-work-details-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-top: 10px;
+  padding: 12px 14px;
+
+  border: 1px solid #ebedf2;
+  border-radius: 6px;
+}
+
+.teacher-work-details-file div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.teacher-work-details-file strong {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.teacher-work-details-file span {
+  color: var(--color-text-secondary);
+  font-size: 10px;
+}
+
+.teacher-work-details-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.teacher-work-details-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 34px;
+  padding: 0 14px;
+
+  border: 1px solid var(--color-primary);
+  border-radius: 4px;
+
+  background: #fff;
+  color: var(--color-primary);
+
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.teacher-work-details-button--primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.teacher-work-details-button--warning {
+  border-color: #b83838;
+  color: #b83838;
+}
+
+.teacher-work-details-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.teacher-work-details-review-history {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 6px;
+  background: #f7f7fb;
+}
+
+.teacher-work-details-state,
+.teacher-work-details-message {
+  padding: 18px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 11px;
+}
+
+.teacher-work-details-error {
+  color: #b83838;
+}
+
+.teacher-work-details-success {
+  color: #2e8c47;
+}
+
+@media (max-width: 700px) {
+  .teacher-work-details-section-header,
+  .teacher-work-details-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teacher-work-details-header h1 {
+    font-size: 24px;
+  }
+}

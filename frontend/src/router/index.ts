@@ -8,6 +8,11 @@ import AdminProjectsView from '../views/AdminProjectsView.vue'
 import AdminProjectCreateView from '../views/AdminProjectCreateView.vue'
 import AdminApplicationsView from '../views/AdminApplicationsView.vue'
 import AdminParticipantsView from '../views/AdminParticipantsView.vue'
+import TeachersProjectsView from '../views/TeachersProjectsView.vue'
+import TeachersParticipantsView from '../views/TeachersParticipantsView.vue'
+import TeacherWorksView from '../views/TeacherWorksView.vue'
+import TeacherWorkDetailsView from '../views/TeacherWorkDetailsView.vue'
+
 const router = createRouter({
   history: createWebHistory(),
 
@@ -89,6 +94,60 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         roles: ['ADMIN'],
+      },
+    },
+    {
+      path: '/myprojects',
+      name: 'teacher-projects',
+      component: TeachersProjectsView,
+      meta: {
+        requiresAuth: true,
+        roles: ['TEACHER'],
+      }
+    },
+    {
+      path: '/projects_participants',
+      name: 'teacher-participants',
+      component: TeachersParticipantsView,
+      meta: {
+        requiresAuth: true,
+        roles: ['TEACHER'],
+      },
+    },
+    {
+      path: '/myprojects/:id/participants',
+      name: 'teacher-project-participants',
+      component: TeachersParticipantsView,
+      meta: {
+        requiresAuth: true,
+        roles: ['TEACHER'],
+      },
+    },
+    {
+      path: '/projects_works',
+      name: 'teacher-works',
+      component: TeacherWorksView,
+      meta: {
+        requiresAuth: true,
+        roles: ['TEACHER'],
+      },
+    },
+    {
+      path: '/myprojects/:id/works',
+      name: 'teacher-project-works',
+      component: TeacherWorksView,
+      meta: {
+        requiresAuth: true,
+        roles: ['TEACHER'],
+      },
+    },
+    {
+      path: '/myprojects/:id/works/:workid',
+      name: 'teacher-work-details',
+      component: TeacherWorkDetailsView,
+      meta:{
+        requiresAuth: true,
+        roles: ['TEACHER']
       },
     },
   ],
