@@ -197,10 +197,19 @@
   background: var(--color-primary);
   color: #fff;
 }
-
+.teacher-work-details-button--primary:hover {
+  background: var(--color-primary-hover);
+  color: var(--color-text-primary);
+}
 .teacher-work-details-button--warning {
   border-color: #b83838;
   color: #b83838;
+}
+
+.teacher-work-details-button--warning:hover {
+  border-color: #b83838;
+  color: var(--color-primary-hover);
+  background: var(--color-error);
 }
 
 .teacher-work-details-button:disabled {

@@ -62,7 +62,7 @@ const reviewing = ref(false)
 const downloadingFileId = ref<number | null>(null)
 
 const comment = ref('')
-const gradeInput = ref('')
+const gradeInput = ref<number | ''>('')
 const selectedVersion = ref<number | null>(null)
 
 const projectId = Number(route.params.id)
@@ -139,7 +139,7 @@ async function loadPage() {
 async function acceptWork() {
   if (!work.value || !canReview.value || reviewing.value) return
 
-  const grade = gradeInput.value.trim() === ''
+  const grade = gradeInput.value === ''
     ? null
     : Number(gradeInput.value)
 

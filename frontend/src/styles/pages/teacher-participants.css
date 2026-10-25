@@ -190,6 +190,7 @@
   color: var(--color-error);
 }
 
+
 @media (max-width: 700px) {
   .teacher-participants-header h1 {
     font-size: 24px;
@@ -229,8 +230,9 @@
   cursor: pointer;
 }
 
-.teacher-participants-table__exclude:hover:not(:disabled) {
-  background: #fff1f1;
+.teacher-participants-table__exclude:hover {
+  background: var(--color-error);
+  color: var(--color-primary-hover );
 }
 
 .teacher-participants-table__exclude:disabled {
