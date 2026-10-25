@@ -199,13 +199,13 @@ onMounted(loadPage)
             </RouterLink>
             <RouterLink
               class="teacher-projects-table__action"
-              :to="`/projects/${project.id}`"
+              :to="`/myprojects/${project.id}/participants`"
             >
               Участники
             </RouterLink>
             <RouterLink
               class="teacher-projects-table__action"
-              :to="`/projects/${project.id}`"
+              :to="`/myprojects/${project.id}/works`"
             >
               Работы
             </RouterLink>

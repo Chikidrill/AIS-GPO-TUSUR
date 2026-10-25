@@ -1,0 +1,239 @@
+.teacher-participants-content {
+  width: calc(100% - 48px);
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 40px 0 56px;
+}
+
+.teacher-participants-header {
+  margin-bottom: 24px;
+}
+
+.teacher-participants-header h1 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.teacher-participants-header p {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.teacher-participants-project-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.teacher-participants-project-picker label {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.teacher-participants-select,
+.teacher-participants-filter {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  min-width: 0;
+  box-sizing: border-box;
+
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+
+  background: #fff;
+  color: var(--color-text-primary);
+
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.teacher-participants-project-name {
+  margin: 0 0 24px;
+  color: var(--color-text-primary);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.teacher-participants-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.teacher-participants-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  width: 250px;
+  height: 88px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.teacher-participants-stat span {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.teacher-participants-stat strong {
+  color: var(--color-primary);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.teacher-participants-stat__free {
+  color: #2e8c47 !important;
+}
+
+.teacher-participants-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.teacher-participants-table {
+  width: 100%;
+  overflow-x: auto;
+
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.teacher-participants-table__header,
+.teacher-participants-table__row {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 2fr)
+    90px
+    minmax(180px, 2fr)
+    100px
+    130px
+    140px;
+
+  align-items: center;
+
+  min-width: 1000px;
+  padding: 0 16px;
+}
+
+.teacher-participants-table__header {
+  height: 36px;
+  background: #f7f7fb;
+}
+
+.teacher-participants-table__header > span {
+  display: flex;
+  align-items: center;
+
+  height: 100%;
+  padding: 0 12px;
+
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.teacher-participants-table__row {
+  min-height: 56px;
+  border-top: 1px solid #ebedf2;
+}
+
+.teacher-participants-table__row > span {
+  display: flex;
+  align-items: center;
+
+  min-height: 56px;
+  min-width: 0;
+  padding: 10px 12px;
+
+  box-sizing: border-box;
+
+  font-size: 10px;
+}
+
+.teacher-participants-table__name {
+  font-weight: 600;
+}
+
+.teacher-participants-table__row
+  > .teacher-participants-table__status {
+  color: #2e8c47;
+  font-weight: 500;
+}
+
+.teacher-participants-state {
+  padding: 32px 20px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+
+  background: #fff;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.teacher-participants-state--error {
+  color: var(--color-error);
+}
+
+@media (max-width: 700px) {
+  .teacher-participants-header h1 {
+    font-size: 24px;
+  }
+
+  .teacher-participants-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-participants-stats {
+    flex-wrap: wrap;
+  }
+
+  .teacher-participants-stat {
+    flex: 1 1 160px;
+  }
+  .teacher-participants-table__actions {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+}
+.teacher-participants-table__exclude {
+  min-height: 30px;
+  padding: 0 12px;
+
+  border: 1px solid #b83838;
+  border-radius: 4px;
+
+  background: #fff;
+  color: #b83838;
+
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.teacher-participants-table__exclude:hover:not(:disabled) {
+  background: #fff1f1;
+}
+
+.teacher-participants-table__exclude:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
