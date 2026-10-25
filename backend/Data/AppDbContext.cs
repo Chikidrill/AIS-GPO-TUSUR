@@ -1,5 +1,6 @@
 ﻿using AisGpo.Api.Domain;
 using Microsoft.EntityFrameworkCore;
+using AisGpo.Api.Domain.Works;
 
 namespace AisGpo.Api.Data;
 
@@ -40,6 +41,24 @@ public sealed class AppDbContext(
     /// </summary>
     public DbSet<ProjectMembership> ProjectMemberships =>
         Set<ProjectMembership>();
+
+    /// <summary>
+    /// Работы студентов.
+    /// </summary>
+    public DbSet<StudentWork> StudentWorks =>
+        Set<StudentWork>();
+
+    /// <summary>
+    /// Версии работ студентов.
+    /// </summary>
+    public DbSet<WorkRevision> WorkRevisions =>
+        Set<WorkRevision>();
+
+    /// <summary>
+    /// Файлы, приложенные к версиям работ.
+    /// </summary>
+    public DbSet<WorkFile> WorkFiles =>
+        Set<WorkFile>();
 
     /// <summary>
     /// Настраивает отображение доменных сущностей
@@ -104,6 +123,7 @@ public sealed class AppDbContext(
             // использовать один email.
             e.HasIndex(x => x.Email)
                 .IsUnique();
+
         });
 
         // -------------------------------------------------
@@ -365,5 +385,11 @@ public sealed class AppDbContext(
                 .HasDatabaseName(
                     "uq_one_active_project_per_student");
         });
+
+        // Конфигурации нового модуля работ
+        // вынесены в отдельные IEntityTypeConfiguration,
+        // чтобы дополнительно не раздувать AppDbContext.
+        b.ApplyConfigurationsFromAssembly(
+            typeof(AppDbContext).Assembly);
     }
 }

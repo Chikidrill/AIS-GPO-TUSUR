@@ -20,8 +20,11 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=ais_gpo;Username=ais_gpo;Password=ais_gpo
+      FileStorage__RootPath: /app/storage/work-files
     ports:
       - "5080:8080"
+    volumes:
+      - ais_gpo_work_files:/app/storage/work-files
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,3 +41,5 @@ volumes:
   ais_gpo_pgdata:
     external: true
     name: backend_ais_gpo_pgdata
+
+  ais_gpo_work_files:

@@ -22,7 +22,8 @@ public sealed class ProjectsController(
     AppDbContext db) : ControllerBase
 {
     /// <summary>
-    /// Возвращает полный каталог проектов.
+    /// Возвращает доступный текущему пользователю
+    /// каталог проектов.
     /// </summary>
     /// <param name="ct">
     /// Токен отмены асинхронной операции.
@@ -33,21 +34,43 @@ public sealed class ProjectsController(
     /// </returns>
     /// <remarks>
     /// Endpoint: GET /api/v1/projects.
+    /// ADMIN получает все проекты.
     ///
-    /// Доступен любому авторизованному пользователю.
+    /// STUDENT получает проекты OPEN и IN_PROGRESS.
     ///
-    /// Количество занятых мест не хранится
-    /// отдельным полем проекта, а вычисляется
-    /// по ACTIVE ProjectMembership.
+    /// TEACHER получает проекты OPEN и IN_PROGRESS,
+    /// а также собственные проекты независимо от статуса.
     /// </remarks>
     [HttpGet]
     public async Task<ActionResult<
         IReadOnlyList<ProjectResponse>>> GetAll(
             CancellationToken ct)
     {
-        var projects = await db.Projects
-            .AsNoTracking()
-            .Include(x => x.Supervisor)
+        var query = db.Projects
+    .AsNoTracking()
+    .Include(x => x.Supervisor)
+    .AsQueryable();
+
+        if (User.IsInRole(nameof(UserRole.STUDENT)))
+        {
+            query = query.Where(
+                x =>
+                    x.Status == ProjectStatus.OPEN ||
+                    x.Status == ProjectStatus.IN_PROGRESS);
+        }
+        else if (User.IsInRole(nameof(UserRole.TEACHER)))
+        {
+            var teacherId = User.GetUserId();
+
+            query = query.Where(
+                x =>
+                    x.Status == ProjectStatus.OPEN ||
+                    x.Status == ProjectStatus.IN_PROGRESS ||
+                    x.SupervisorId == teacherId);
+        }
+
+        // ADMIN получает полный список без дополнительного фильтра.
+        var projects = await query
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(ct);
 
@@ -124,6 +147,14 @@ public sealed class ProjectsController(
 
         if (project is null)
         {
+            return NotFound();
+        }
+
+        if (!CanViewProject(project))
+        {
+            // Для невидимого проекта возвращаем 404,
+            // чтобы не раскрывать постороннему пользователю
+            // факт существования служебного проекта.
             return NotFound();
         }
 
@@ -525,6 +556,16 @@ public sealed class ProjectsController(
             return NotFound();
         }
 
+        if (!IsAllowedStatusTransition(
+        project.Status,
+        request.Status))
+        {
+            throw new ApiException(
+                StatusCodes.Status409Conflict,
+                "INVALID_PROJECT_STATUS_TRANSITION",
+                $"Project status cannot be changed from {project.Status} to {request.Status}.");
+        }
+
         project.Status =
             request.Status;
 
@@ -784,5 +825,74 @@ public sealed class ProjectsController(
         return string.IsNullOrWhiteSpace(value)
             ? null
             : value.Trim();
+    }
+
+    /// <summary>
+    /// Проверяет допустимость перехода
+    /// между состояниями проекта.
+    /// </summary>
+    private static bool IsAllowedStatusTransition(
+        ProjectStatus current,
+        ProjectStatus next)
+    {
+        // Повторная установка того же статуса
+        // считается допустимой идемпотентной операцией.
+        if (current == next)
+        {
+            return true;
+        }
+
+        return current switch
+        {
+            ProjectStatus.DRAFT =>
+                next is ProjectStatus.OPEN
+                    or ProjectStatus.ARCHIVED,
+
+            ProjectStatus.OPEN =>
+                next is ProjectStatus.DRAFT
+                    or ProjectStatus.IN_PROGRESS
+                    or ProjectStatus.ARCHIVED,
+
+            ProjectStatus.IN_PROGRESS =>
+                next is ProjectStatus.COMPLETED
+                    or ProjectStatus.ARCHIVED,
+
+            ProjectStatus.COMPLETED =>
+                next is ProjectStatus.ARCHIVED,
+
+            ProjectStatus.ARCHIVED =>
+                false,
+
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// Проверяет, имеет ли текущий пользователь
+    /// право видеть проект.
+    /// </summary>
+    private bool CanViewProject(Project project)
+    {
+        if (User.IsInRole(nameof(UserRole.ADMIN)))
+        {
+            return true;
+        }
+
+        var isPublic =
+            project.Status == ProjectStatus.OPEN ||
+            project.Status == ProjectStatus.IN_PROGRESS;
+
+        if (User.IsInRole(nameof(UserRole.STUDENT)))
+        {
+            return isPublic;
+        }
+
+        if (User.IsInRole(nameof(UserRole.TEACHER)))
+        {
+            return isPublic ||
+                   project.SupervisorId == User.GetUserId();
+        }
+
+        return false;
     }
 }
