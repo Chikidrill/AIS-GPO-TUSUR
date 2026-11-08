@@ -13,6 +13,9 @@ import TeachersParticipantsView from '../views/TeachersParticipantsView.vue'
 import TeacherWorksView from '../views/TeacherWorksView.vue'
 import TeacherWorkDetailsView from '../views/TeacherWorkDetailsView.vue'
 import StudentMyProjectView from '../views/StudentMyProjectView.vue'
+import StudentWorkDetailsView from '../views/StudentWorkDetailsView.vue'
+import StudentWorksView from '../views/StudentWorksView.vue'
+
 const router = createRouter({
   history: createWebHistory(),
 
@@ -151,12 +154,30 @@ const router = createRouter({
       },
     },
     {
-      path: '/myprojects/:id/works/:workid',
+      path: '/myprojects/:id/works/:workId',
       name: 'teacher-work-details',
       component: TeacherWorkDetailsView,
       meta:{
         requiresAuth: true,
         roles: ['TEACHER']
+      },
+    },
+    {
+      path: '/works',
+      name: 'student-works',
+      component: StudentWorksView,
+      meta: {
+        requiresAuth: true,
+        roles: ['STUDENT'],
+      },
+    },
+    {
+      path: '/works/:workId',
+      name: 'student-work-details',
+      component: StudentWorkDetailsView,
+      meta: {
+        requiresAuth: true,
+        roles: ['STUDENT'],
       },
     },
   ],
