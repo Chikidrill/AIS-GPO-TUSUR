@@ -64,6 +64,11 @@ const navigationItems: NavigationItem[] = [
     to: '/admin/participants',
     roles: ['ADMIN'],
   },
+  {
+    label: 'Работы',
+    to: '/admin/works',
+    roles: ['ADMIN'],
+  },
 ]
 
 const visibleNavigationItems = computed(() => {

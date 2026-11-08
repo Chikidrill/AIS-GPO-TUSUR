@@ -15,6 +15,8 @@ import TeacherWorkDetailsView from '../views/TeacherWorkDetailsView.vue'
 import StudentMyProjectView from '../views/StudentMyProjectView.vue'
 import StudentWorkDetailsView from '../views/StudentWorkDetailsView.vue'
 import StudentWorksView from '../views/StudentWorksView.vue'
+import AdminWorksView from '../views/AdminWorksView.vue'
+import AdminWorkDetailsView from '../views/AdminWorkDetailsView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -178,6 +180,24 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         roles: ['STUDENT'],
+      },
+    },
+    {
+      path: '/admin/works',
+      name: 'admin-works',
+      component: AdminWorksView,
+      meta: {
+        requiresAuth: true,
+        roles: ['ADMIN'],
+      },
+    },
+    {
+      path: '/admin/works/:workId',
+      name: 'admin-work-details',
+      component: AdminWorkDetailsView,
+      meta: {
+        requiresAuth: true,
+        roles: ['ADMIN'],
       },
     },
   ],
