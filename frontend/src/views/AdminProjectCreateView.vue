@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { http } from '../api/http'
@@ -176,6 +176,54 @@ async function saveProject() {
   }
 }
 
+const facultyDepartments: Record<string, string[]> = {
+  ГФ: ['Кафедра ИСР', 'Кафедра ИЯ', 'Кафедра ФиС'],
+  ИРЭТ: [
+    'Кафедра КИПР',
+    'Кафедра КУДР',
+    'Кафедра ПрЭ',
+    'Кафедра РТС',
+    'Кафедра РСС',
+    'Кафедра РЭТЭМ',
+    'Кафедра СВЧиКР',
+    'Кафедра ТУ',
+    'Кафедра ТОР',
+    'Кафедра ФЭ',
+    'Кафедра ЭП',
+  ],
+  СБИ: ['Кафедра СБИ'],
+  ФБ: ['Кафедра БИС', 'Кафедра ЭБ', 'Кафедра КИБЭВС'],
+  ФВС: ['Кафедра КСУП', 'Кафедра ЭМИС'],
+  ФИТ: ['Кафедра УИ'],
+  ФСУ: ['Кафедра АОИ', 'Кафедра АСУ'],
+  ЭФ: ['Кафедра менеджмента', 'Кафедра экономики'],
+  ЮФ: ['Кафедра ИГПиПОИД'],
+}
+
+const facultyLabels: Record<string, string> = {
+  ГФ: 'Гуманитарный факультет',
+  ИРЭТ: 'Институт радиоэлектронной техники',
+  СБИ: 'Студенческий бизнес-инкубатор',
+  ФБ: 'Факультет безопасности',
+  ФВС: 'Факультет вычислительных систем',
+  ФИТ: 'Факультет инновационных технологий',
+  ФСУ: 'Факультет систем управления',
+  ЭФ: 'Экономический факультет',
+  ЮФ: 'Юридический факультет',
+}
+
+const availableDepartments = computed(() => {
+  const departments = facultyDepartments[faculty.value] ?? []
+
+  // Сохраняем возможность редактировать старые проекты,
+  // если кафедра указана в другом формате.
+  if (department.value && !departments.includes(department.value)) {
+    return [...departments, department.value]
+  }
+
+  return departments
+})
+
 async function logout() {
   localStorage.removeItem('accessToken')
   localStorage.removeItem('role')
@@ -256,26 +304,41 @@ onMounted(async () => {
             </label>
 
             <label class="project-create-field">
-              <span>Подразделение</span>
+              <span>Факультет / подразделение *</span>
 
-              <input
+              <select
                 v-model="faculty"
-                type="text"
-                maxlength="255"
-                placeholder="Например, ФВС"
+                @change=""
+                required
               >
+                <option value="" disabled>
+                  Выберите факультет или подразделение
+                </option>
+
+                <option
+                  v-if="faculty && !facultyDepartments[faculty]"
+                  :value="faculty"
+                >
+                  {{ faculty }} (ранее указанное)
+                </option>
+
+                <option v-for="(departments, code) in facultyDepartments" :key="code" :value="code">
+                  {{  facultyLabels[code] }} ({{ code }})
+                </option>
+              </select>
             </label>
 
             <label class="project-create-field">
               <span>Кафедра *</span>
 
-              <input
-                v-model="department"
-                type="text"
-                maxlength="255"
-                placeholder="Например, Кафедра КСУП"
-                required
-              >
+              <select v-model="department" required :disabled="!faculty">
+                <option value="" disabled>
+                  Выберите кафедру
+                </option>
+                <option v-for="item in availableDepartments" :key="item" :value="item">
+                  {{ item }}
+                </option>
+              </select>
             </label>
 
             <label class="project-create-field">
