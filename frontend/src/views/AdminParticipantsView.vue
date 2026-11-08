@@ -39,6 +39,8 @@ const selectedProject = ref('')
 const selectedFaculty = ref('')
 const selectedDepartment = ref('')
 
+const excludingStudentId = ref<number | null>(null)
+
 const projects = computed(() => {
   const map = new Map<number, string>()
 
@@ -121,6 +123,38 @@ function getProjectLabel(participant: Participant) {
   }
 
   return `${participant.projectCode} — ${participant.projectName}`
+}
+
+async function excludeParticipant(participant: Participant) {
+  if (excludingStudentId.value !== null) return
+
+  const confirmed = window.confirm(
+    `Исключить студента «${participant.studentName}» ` +
+    `из проекта «${participant.projectName}»?`
+  )
+
+  if (!confirmed) return
+
+  excludingStudentId.value = participant.studentId
+  error.value = ''
+
+  try {
+    await http.post(
+      `/projects/${participant.projectId}/participants/${participant.studentId}/exclude`
+    )
+
+    participants.value = participants.value.filter(
+      item =>
+        !(
+          item.studentId === participant.studentId &&
+          item.projectId === participant.projectId
+        )
+    )
+  } catch {
+    error.value = 'Не удалось исключить участника.'
+  } finally {
+    excludingStudentId.value = null
+  }
 }
 
 async function loadPage() {
@@ -319,9 +353,14 @@ onMounted(loadPage)
           <button
             class="admin-participants-table__action admin-participants-table__action--exclude"
             type="button"
-            title="Исключить"
+            :disabled="excludingStudentId !==null"
+            @click="excludeParticipant(participant)"
           >
-            Исключить
+            {{
+              excludingStudentId === participant.studentId
+                ? 'Исключение...'
+                : 'Исключить'
+            }}
           </button>
         </div>
       </div>
