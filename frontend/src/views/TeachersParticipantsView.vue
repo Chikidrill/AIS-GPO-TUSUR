@@ -381,7 +381,7 @@ onMounted(loadPage)
               <span>Компетенции</span>
               <span>Статус</span>
               <span>Дата вступления</span>
-              <span>Действия</span>
+              <!-- <span>Действия</span> -->
             </div>
 
             <div
@@ -408,7 +408,7 @@ onMounted(loadPage)
               <span>
                 {{ formatDate(participant.joinedAt) }}
               </span>
-              <div class="teacher-participants-table__actions">
+              <!-- <div class="teacher-participants-table__actions">
                 <button
                   class="teacher-participants-table__exclude"
                   type="button"
@@ -417,7 +417,7 @@ onMounted(loadPage)
                 >
                   {{ excludingStudentId === participant.id ? 'Исключение...' : 'Исключить' }}
                 </button>
-              </div>
+              </div> -->
             </div>
           </div>
         </template>
