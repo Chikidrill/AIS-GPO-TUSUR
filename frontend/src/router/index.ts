@@ -12,7 +12,7 @@ import TeachersProjectsView from '../views/TeachersProjectsView.vue'
 import TeachersParticipantsView from '../views/TeachersParticipantsView.vue'
 import TeacherWorksView from '../views/TeacherWorksView.vue'
 import TeacherWorkDetailsView from '../views/TeacherWorkDetailsView.vue'
-
+import StudentMyProjectView from '../views/StudentMyProjectView.vue'
 const router = createRouter({
   history: createWebHistory(),
 
@@ -40,6 +40,15 @@ const router = createRouter({
       component: ProjectView,
       meta: {
         requiresAuth: true,
+      },
+    },
+    {
+      path: '/myproject',
+      name: 'student-my-project',
+      component: StudentMyProjectView,
+      meta: {
+        requiresAuth: true,
+        roles: ['STUDENT'],
       },
     },
     {
