@@ -5,15 +5,45 @@ using AisGpo.Api.Auth;
 using AisGpo.Api.Common;
 using AisGpo.Api.Data;
 using AisGpo.Api.Services;
+using AisGpo.Api.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using AisGpo.Api.Storage;
+using Microsoft.AspNetCore.Http.Features;
 
 // Создаём builder ASP.NET Core приложения.
 // Через него регистрируются конфигурация,
 // Dependency Injection и инфраструктурные сервисы.
 var builder = WebApplication.CreateBuilder(args);
+
+var workUpload = builder.Configuration
+    .GetSection(WorkUploadOptions.SectionName)
+    .Get<WorkUploadOptions>()
+    ?? throw new InvalidOperationException(
+        "WorkUpload configuration is required.");
+
+if (workUpload.MaxRequestBodySizeBytes <
+    workUpload.MaxTotalSizeBytes)
+{
+    throw new InvalidOperationException(
+        "WorkUpload:MaxRequestBodySizeBytes must be greater than or equal to MaxTotalSizeBytes.");
+}
+
+// Kestrel должен принять запрос целиком,
+// прежде чем бизнес-валидатор сможет проверить файлы.
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize =
+        workUpload.MaxRequestBodySizeBytes;
+});
+
+// Ограничение multipart/form-data
+// на уровне ASP.NET Core.
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit =
+        workUpload.MaxRequestBodySizeBytes;
+});
 
 // Подключаем MVC-контроллеры.
 //
@@ -110,23 +140,20 @@ builder.Services
 // Включаем механизм авторизации ASP.NET Core.
 builder.Services.AddAuthorization();
 
-// Настройки файлового хранилища
-// для работ студентов.
+// Настройки физического файлового хранилища.
 builder.Services.Configure<FileStorageOptions>(
     builder.Configuration.GetSection(
         FileStorageOptions.SectionName));
+
+// Ограничения загрузки файлов работ:
+// количество, размеры и разрешённые форматы.
+builder.Services.Configure<WorkUploadOptions>(
+    builder.Configuration.GetSection(
+        WorkUploadOptions.SectionName));
 
 // Бизнес-код работает через IFileStorage,
 // а конкретной реализацией пока является
 // локальное файловое хранилище.
-builder.Services.AddSingleton<
-    IFileStorage,
-    LocalFileStorage>();
-
-builder.Services.Configure<FileStorageOptions>(
-    builder.Configuration.GetSection(
-        FileStorageOptions.SectionName));
-
 builder.Services.AddSingleton<
     IFileStorage,
     LocalFileStorage>();
@@ -142,6 +169,8 @@ builder.Services.AddScoped<
     ParticipationApplicationService>();
 
 builder.Services.AddScoped<MeProjectService>();
+
+builder.Services.AddScoped<WorkUploadValidator>();
 
 builder.Services.AddScoped<StudentWorkService>();
 

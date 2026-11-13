@@ -15,7 +15,8 @@ namespace AisGpo.Api.Services;
 public sealed class WorkResubmissionService(
     AppDbContext db,
     IFileStorage fileStorage,
-    WorkQueryService workQueryService)
+    WorkQueryService workQueryService,
+    WorkUploadValidator uploadValidator)
 {
     /// <summary>
     /// Создаёт новую версию существующей работы.
@@ -42,6 +43,10 @@ public sealed class WorkResubmissionService(
                 "WORK_CONTENT_REQUIRED",
                 "Work must contain text, files, or both.");
         }
+
+        await uploadValidator.ValidateAsync(
+            files,
+            ct);
 
         var work = await db.StudentWorks
             .Include(x => x.Revisions)

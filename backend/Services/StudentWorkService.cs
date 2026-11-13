@@ -17,7 +17,8 @@ namespace AisGpo.Api.Services;
 /// </summary>
 public sealed class StudentWorkService(
     AppDbContext db,
-    IFileStorage fileStorage)
+    IFileStorage fileStorage,
+    WorkUploadValidator uploadValidator)
 {
     /// <summary>
     /// Создаёт первую отправку работы студента.
@@ -45,6 +46,10 @@ public sealed class StudentWorkService(
                 "WORK_CONTENT_REQUIRED",
                 "Work must contain text or at least one file.");
         }
+
+        await uploadValidator.ValidateAsync(
+            files,
+            ct);
 
         // Отправлять работу может только студент,
         // который действительно является ACTIVE
