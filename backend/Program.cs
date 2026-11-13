@@ -7,26 +7,57 @@ using AisGpo.Api.Data;
 using AisGpo.Api.Services;
 using AisGpo.Api.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Http.Features;
 
 // Создаём builder ASP.NET Core приложения.
 // Через него регистрируются конфигурация,
 // Dependency Injection и инфраструктурные сервисы.
 var builder = WebApplication.CreateBuilder(args);
 
+// Загружаем ограничения загрузки файлов.
 var workUpload = builder.Configuration
     .GetSection(WorkUploadOptions.SectionName)
     .Get<WorkUploadOptions>()
     ?? throw new InvalidOperationException(
         "WorkUpload configuration is required.");
 
+if (workUpload.MaxFiles <= 0)
+{
+    throw new InvalidOperationException(
+        "WorkUpload:MaxFiles must be greater than zero.");
+}
+
+if (workUpload.MaxFileSizeBytes <= 0)
+{
+    throw new InvalidOperationException(
+        "WorkUpload:MaxFileSizeBytes must be greater than zero.");
+}
+
+if (workUpload.MaxTotalSizeBytes <= 0)
+{
+    throw new InvalidOperationException(
+        "WorkUpload:MaxTotalSizeBytes must be greater than zero.");
+}
+
+if (workUpload.MaxRequestBodySizeBytes <= 0)
+{
+    throw new InvalidOperationException(
+        "WorkUpload:MaxRequestBodySizeBytes must be greater than zero.");
+}
+
 if (workUpload.MaxRequestBodySizeBytes <
     workUpload.MaxTotalSizeBytes)
 {
     throw new InvalidOperationException(
         "WorkUpload:MaxRequestBodySizeBytes must be greater than or equal to MaxTotalSizeBytes.");
+}
+
+if (workUpload.AllowedExtensions.Length == 0)
+{
+    throw new InvalidOperationException(
+        "WorkUpload:AllowedExtensions must contain at least one extension.");
 }
 
 // Kestrel должен принять запрос целиком,
@@ -66,16 +97,25 @@ builder.Services.AddOpenApi();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// Строка подключения не должна
+// незаметно отсутствовать в production.
+var postgresConnectionString =
+    builder.Configuration
+        .GetConnectionString("Postgres");
+
+if (string.IsNullOrWhiteSpace(
+        postgresConnectionString))
+{
+    throw new InvalidOperationException(
+        "ConnectionStrings:Postgres is required.");
+}
+
 // Регистрируем Entity Framework Core
 // и подключение к PostgreSQL.
-//
-// Строка подключения берётся
-// из ConnectionStrings:Postgres.
 builder.Services.AddDbContext<AppDbContext>(
     options =>
         options.UseNpgsql(
-            builder.Configuration
-                .GetConnectionString("Postgres")));
+            postgresConnectionString));
 
 // Загружаем JWT-настройки
 // из секции Jwt конфигурации.
@@ -89,13 +129,67 @@ var jwt = builder.Configuration
     ?? throw new InvalidOperationException(
         "JWT configuration is required.");
 
+if (string.IsNullOrWhiteSpace(
+        jwt.Issuer))
+{
+    throw new InvalidOperationException(
+        "Jwt:Issuer is required.");
+}
+
+if (string.IsNullOrWhiteSpace(
+        jwt.Audience))
+{
+    throw new InvalidOperationException(
+        "Jwt:Audience is required.");
+}
+
+if (string.IsNullOrWhiteSpace(
+        jwt.Secret))
+{
+    throw new InvalidOperationException(
+        "Jwt:Secret is required.");
+}
+
 // HMAC-ключ должен иметь достаточную длину.
-// При некорректной конфигурации приложение
-// не запускается.
-if (Encoding.UTF8.GetByteCount(jwt.Secret) < 32)
+if (Encoding.UTF8.GetByteCount(
+        jwt.Secret) < 32)
 {
     throw new InvalidOperationException(
         "Jwt:Secret must contain at least 32 bytes.");
+}
+
+if (jwt.ExpiresMinutes <= 0)
+{
+    throw new InvalidOperationException(
+        "Jwt:ExpiresMinutes must be greater than zero.");
+}
+
+// Известный development-secret
+// запрещён за пределами Development.
+const string developmentJwtSecret =
+    "dev-secret-change-me-at-least-32-bytes";
+
+if (!builder.Environment.IsDevelopment() &&
+    string.Equals(
+        jwt.Secret,
+        developmentJwtSecret,
+        StringComparison.Ordinal))
+{
+    throw new InvalidOperationException(
+        "The development JWT secret cannot be used outside Development.");
+}
+
+// Тестовые пользователи разрешены
+// исключительно в Development.
+var devSeedEnabled =
+    builder.Configuration.GetValue<bool>(
+        "DevSeed:Enabled");
+
+if (!builder.Environment.IsDevelopment() &&
+    devSeedEnabled)
+{
+    throw new InvalidOperationException(
+        "DevSeed cannot be enabled outside Development.");
 }
 
 // Настраиваем JWT Bearer Authentication.
@@ -145,8 +239,7 @@ builder.Services.Configure<FileStorageOptions>(
     builder.Configuration.GetSection(
         FileStorageOptions.SectionName));
 
-// Ограничения загрузки файлов работ:
-// количество, размеры и разрешённые форматы.
+// Ограничения загрузки файлов работ.
 builder.Services.Configure<WorkUploadOptions>(
     builder.Configuration.GetSection(
         WorkUploadOptions.SectionName));
