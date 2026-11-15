@@ -25,7 +25,7 @@ public sealed class WorkResubmissionService(
     public async Task<WorkDetailsResponse> ResubmitAsync(
         long studentId,
         long workId,
-        SubmitWorkRequest request,
+        SubmitWorkRevisionRequest request,
         CancellationToken ct)
     {
         var text = string.IsNullOrWhiteSpace(request.Text)

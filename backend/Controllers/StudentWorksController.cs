@@ -56,7 +56,7 @@ public sealed class StudentWorksController(
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<StudentWorkResponse>> Submit(
         long projectId,
-        [FromForm] SubmitWorkRequest request,
+        [FromForm] CreateWorkRequest request,
         CancellationToken ct)
     {
         var result = await service.SubmitAsync(

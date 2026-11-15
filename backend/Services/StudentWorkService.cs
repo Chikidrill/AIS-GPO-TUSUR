@@ -26,9 +26,21 @@ public sealed class StudentWorkService(
     public async Task<StudentWorkResponse> SubmitAsync(
         long studentId,
         long projectId,
-        SubmitWorkRequest request,
+        CreateWorkRequest request,
         CancellationToken ct)
     {
+        var title = string.IsNullOrWhiteSpace(request.Title)
+    ? null
+    : request.Title.Trim();
+
+        if (title is null)
+        {
+            throw new ApiException(
+                StatusCodes.Status400BadRequest,
+                "WORK_TITLE_REQUIRED",
+                "Work title is required.");
+        }
+
         var text = string.IsNullOrWhiteSpace(request.Text)
             ? null
             : request.Text.Trim();
@@ -95,27 +107,13 @@ public sealed class StudentWorkService(
                 "STUDENT_NOT_FOUND",
                 "Student not found.");
 
-        // Первая отправка создаёт StudentWork.
-        // Повторная отправка будет реализована отдельно
-        // как новая WorkRevision в BE-07.
-        if (await db.StudentWorks.AnyAsync(
-                x =>
-                    x.StudentId == studentId &&
-                    x.ProjectId == projectId,
-                ct))
-        {
-            throw new ApiException(
-                StatusCodes.Status409Conflict,
-                "WORK_ALREADY_EXISTS",
-                "Student work for this project already exists.");
-        }
-
         var now = DateTimeOffset.UtcNow;
 
         var work = new StudentWork
         {
             StudentId = studentId,
             ProjectId = projectId,
+            Title = title,
             Status = WorkStatus.SUBMITTED,
             CreatedAt = now,
             UpdatedAt = now
@@ -202,6 +200,7 @@ public sealed class StudentWorkService(
 
         return new StudentWorkResponse(
             work.Id,
+            work.Title,
             project.Id,
             project.Name,
             student.Id,

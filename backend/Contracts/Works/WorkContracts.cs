@@ -5,28 +5,45 @@ using Microsoft.AspNetCore.Http;
 namespace AisGpo.Api.Contracts.Works;
 
 /// <summary>
-/// Данные для первой отправки работы студентом.
+/// Данные для создания новой самостоятельной работы студента.
 ///
-/// Запрос передаётся как multipart/form-data,
-/// поскольку одновременно может содержать
-/// текст и несколько файлов.
+/// Запрос передаётся как multipart/form-data.
 /// </summary>
-public sealed class SubmitWorkRequest
+public sealed class CreateWorkRequest
 {
     /// <summary>
-    /// Текстовая часть работы.
-    ///
-    /// Может отсутствовать, если студент
-    /// прикладывает хотя бы один файл.
+    /// Название работы.
+    /// </summary>
+    [Required]
+    [MaxLength(255)]
+    public string Title { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Текстовая часть первой версии работы.
     /// </summary>
     [MaxLength(20000)]
     public string? Text { get; init; }
 
     /// <summary>
-    /// Файлы, приложенные к работе.
-    ///
-    /// Может быть пустым, если студент
-    /// отправляет текстовую работу.
+    /// Файлы первой версии работы.
+    /// </summary>
+    public List<IFormFile> Files { get; init; } = [];
+}
+
+/// <summary>
+/// Данные для создания новой версии
+/// существующей работы после возврата на доработку.
+/// </summary>
+public sealed class SubmitWorkRevisionRequest
+{
+    /// <summary>
+    /// Текст новой версии работы.
+    /// </summary>
+    [MaxLength(20000)]
+    public string? Text { get; init; }
+
+    /// <summary>
+    /// Файлы новой версии работы.
     /// </summary>
     public List<IFormFile> Files { get; init; } = [];
 }
@@ -60,6 +77,7 @@ public sealed record WorkRevisionResponse(
 /// </summary>
 public sealed record StudentWorkResponse(
     long Id,
+    string Title,
     long ProjectId,
     string ProjectName,
     long StudentId,
