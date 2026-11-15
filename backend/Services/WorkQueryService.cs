@@ -253,6 +253,7 @@ public sealed class WorkQueryService(
 
                 return new WorkSummaryResponse(
                     work.Id,
+                    work.Title,
                     work.ProjectId,
                     work.Project.Name,
                     work.StudentId,
@@ -306,6 +307,7 @@ public sealed class WorkQueryService(
 
         return new WorkDetailsResponse(
             work.Id,
+            work.Title,
             work.ProjectId,
             work.Project.Name,
             work.StudentId,

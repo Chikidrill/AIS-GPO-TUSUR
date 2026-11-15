@@ -26,6 +26,11 @@ public sealed class StudentWorkConfiguration
         e.Property(x => x.StudentId)
             .HasColumnName("student_id");
 
+        e.Property(x => x.Title)
+            .HasColumnName("title")
+            .HasMaxLength(255)
+            .IsRequired();
+
         e.Property(x => x.Status)
             .HasColumnName("status")
             .HasConversion<string>()
@@ -38,17 +43,18 @@ public sealed class StudentWorkConfiguration
         e.Property(x => x.UpdatedAt)
             .HasColumnName("updated_at");
 
-        // У одного студента в рамках одного проекта
-        // существует одна StudentWork.
-        // Повторные отправки являются WorkRevision.
+        // У одного студента может быть несколько
+        // самостоятельных работ в рамках одного проекта.
+        //
+        // Индекс остаётся для быстрого получения работ
+        // студента по проекту, но больше не является уникальным.
         e.HasIndex(x => new
         {
             x.ProjectId,
             x.StudentId
         })
-            .IsUnique()
             .HasDatabaseName(
-                "uq_student_work_project_student");
+                "ix_student_work_project_student");
 
         e.HasOne(x => x.Project)
             .WithMany()

@@ -343,6 +343,12 @@ namespace AisGpo.Api.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("student_id");
 
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("title");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -352,8 +358,7 @@ namespace AisGpo.Api.Migrations
                     b.HasIndex("StudentId");
 
                     b.HasIndex("ProjectId", "StudentId")
-                        .IsUnique()
-                        .HasDatabaseName("uq_student_work_project_student");
+                        .HasDatabaseName("ix_student_work_project_student");
 
                     b.ToTable("student_works", (string)null);
                 });

@@ -30,7 +30,7 @@ public sealed class StudentWorkRevisionsController(
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<WorkDetailsResponse>> Resubmit(
         long workId,
-        [FromForm] SubmitWorkRequest request,
+        [FromForm] SubmitWorkRevisionRequest request,
         CancellationToken ct)
     {
         var result =

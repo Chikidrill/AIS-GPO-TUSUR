@@ -7,6 +7,7 @@ namespace AisGpo.Api.Contracts.Works;
 /// </summary>
 public sealed record WorkSummaryResponse(
     long Id,
+    string Title,
     long ProjectId,
     string ProjectName,
     long StudentId,
@@ -25,6 +26,7 @@ public sealed record WorkSummaryResponse(
 /// </summary>
 public sealed record WorkDetailsResponse(
     long Id,
+    string Title,
     long ProjectId,
     string ProjectName,
     long StudentId,

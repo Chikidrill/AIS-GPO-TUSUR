@@ -60,6 +60,14 @@ public sealed class StudentWork
     public User Student { get; set; } = null!;
 
     /// <summary>
+    /// Название самостоятельной работы студента.
+    ///
+    /// Используется для различения нескольких работ
+    /// одного студента в рамках одного проекта.
+    /// </summary>
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>
     /// Текущее состояние работы.
     ///
     /// Значение соответствует состоянию
