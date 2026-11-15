@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: ais_gpo
       POSTGRES_USER: ais_gpo
-      POSTGRES_PASSWORD: ais_gpo
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
     volumes:
       - ais_gpo_pgdata:/var/lib/postgresql
     healthcheck:
@@ -17,14 +17,23 @@ services:
     build:
       context: ./backend
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=ais_gpo;Username=ais_gpo;Password=ais_gpo
+
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=ais_gpo;Username=ais_gpo;Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+
+      Jwt__Secret: "${JWT_SECRET:?JWT_SECRET is required}"
+
+      DevSeed__Enabled: "false"
+
       FileStorage__RootPath: /app/storage/work-files
+
     ports:
       - "5080:8080"
+
     volumes:
       - ais_gpo_work_files:/app/storage/work-files
+
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,8 +41,10 @@ services:
   frontend:
     build:
       context: ./frontend
+
     ports:
       - "5173:80"
+
     depends_on:
       - backend
 

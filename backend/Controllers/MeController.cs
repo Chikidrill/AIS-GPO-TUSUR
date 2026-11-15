@@ -141,9 +141,10 @@ public sealed class MeController(
             db.StudentProfiles.Add(profile);
         }
 
-        profile.GroupNumber =
-            request.GroupNumber?.Trim();
-
+        // Номер группы студент самостоятельно
+        // изменять не может.
+        // GroupNumber управляется внешней
+        // основной информационной системой.
         profile.About =
             request.About;
 

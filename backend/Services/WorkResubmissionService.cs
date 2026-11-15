@@ -15,7 +15,8 @@ namespace AisGpo.Api.Services;
 public sealed class WorkResubmissionService(
     AppDbContext db,
     IFileStorage fileStorage,
-    WorkQueryService workQueryService)
+    WorkQueryService workQueryService,
+    WorkUploadValidator uploadValidator)
 {
     /// <summary>
     /// Создаёт новую версию существующей работы.
@@ -43,12 +44,20 @@ public sealed class WorkResubmissionService(
                 "Work must contain text, files, or both.");
         }
 
+        await uploadValidator.ValidateAsync(
+            files,
+            ct);
+
+        // Работа загружается без tracking,
+        // поскольку её состояние далее меняется
+        // атомарным ExecuteUpdateAsync.
         var work = await db.StudentWorks
-            .Include(x => x.Revisions)
-            .SingleOrDefaultAsync(
-                x => x.Id == workId,
-                ct)
-            ?? throw new ApiException(
+             .AsNoTracking()
+             .Include(x => x.Project)
+             .SingleOrDefaultAsync(
+                 x => x.Id == workId,
+                 ct)
+             ?? throw new ApiException(
                 StatusCodes.Status404NotFound,
                 "WORK_NOT_FOUND",
                 "Student work not found.");
@@ -61,21 +70,28 @@ public sealed class WorkResubmissionService(
                 "Student can only access their own work.");
         }
 
-        if (work.Status != WorkStatus.NEEDS_REVISION)
+        if (work.Project.Status != ProjectStatus.IN_PROGRESS)
         {
             throw new ApiException(
                 StatusCodes.Status409Conflict,
-                "WORK_RESUBMISSION_NOT_ALLOWED",
-                "Work can only be resubmitted after revision is requested.");
+                "PROJECT_NOT_IN_PROGRESS",
+                "Work can only be resubmitted while the project is in progress.");
+        }
+
+        if (work.Status != WorkStatus.NEEDS_REVISION)
+        {
+            throw CreateResubmissionConflict();
         }
 
         var hasActiveMembership =
-            await db.ProjectMemberships.AnyAsync(
-                x =>
-                    x.ProjectId == work.ProjectId &&
-                    x.StudentId == studentId &&
-                    x.Status == MembershipStatus.ACTIVE,
-                ct);
+            await db.ProjectMemberships
+                .AsNoTracking()
+                .AnyAsync(
+                    x =>
+                        x.ProjectId == work.ProjectId &&
+                        x.StudentId == studentId &&
+                        x.Status == MembershipStatus.ACTIVE,
+                    ct);
 
         if (!hasActiveMembership)
         {
@@ -87,20 +103,14 @@ public sealed class WorkResubmissionService(
 
         var now = DateTimeOffset.UtcNow;
 
-        var nextVersion = work.Revisions.Count == 0
-            ? 1
-            : work.Revisions.Max(x => x.VersionNumber) + 1;
-
-        var revision = new WorkRevision
-        {
-            StudentWorkId = work.Id,
-            VersionNumber = nextVersion,
-            Text = text,
-            Status = WorkStatus.SUBMITTED,
-            SubmittedAt = now
-        };
-
-        var storedKeys = new List<string>();
+        // Файлы сохраняются до DB-транзакции,
+        // чтобы не держать блокировку строки работы
+        // во время потенциально долгой записи файлов.
+        //
+        // Если конкурентный запрос победит,
+        // эти файлы будут удалены в catch.
+        var storedFiles =
+            new List<StoredWorkFile>();
 
         try
         {
@@ -114,57 +124,200 @@ public sealed class WorkResubmissionService(
                         stream,
                         ct);
 
-                storedKeys.Add(storageKey);
-
                 var fileName =
-                    Path.GetFileName(file.FileName);
+                    GetSafeFileName(
+                        file.FileName);
 
-                if (string.IsNullOrWhiteSpace(fileName))
+                storedFiles.Add(
+                    new StoredWorkFile(
+                        storageKey,
+                        fileName,
+                        string.IsNullOrWhiteSpace(
+                            file.ContentType)
+                            ? "application/octet-stream"
+                            : file.ContentType,
+                        file.Length));
+            }
+
+            await using var transaction =
+                await db.Database
+                    .BeginTransactionAsync(ct);
+
+            // Только один параллельный запрос
+            // может перевести работу из
+            // NEEDS_REVISION обратно в SUBMITTED.
+            //
+            // Второй запрос после ожидания блокировки
+            // увидит уже изменённый status
+            // и обновит 0 строк.
+            var workUpdated =
+                await db.StudentWorks
+                    .Where(x =>
+                        x.Id == workId &&
+                        x.StudentId == studentId &&
+                        x.Status ==
+                            WorkStatus.NEEDS_REVISION)
+                    .ExecuteUpdateAsync(
+                        setters => setters
+                            .SetProperty(
+                                x => x.Status,
+                                WorkStatus.SUBMITTED)
+                            .SetProperty(
+                                x => x.UpdatedAt,
+                                now),
+                        ct);
+
+            if (workUpdated != 1)
+            {
+                await transaction
+                    .RollbackAsync(ct);
+
+                throw CreateResubmissionConflict();
+            }
+
+            // После успешного условного UPDATE
+            // этот запрос является единственным,
+            // кто имеет право создать следующую версию.
+            var lastVersion =
+                await db.WorkRevisions
+                    .Where(x =>
+                        x.StudentWorkId == workId)
+                    .Select(x =>
+                        (int?)x.VersionNumber)
+                    .MaxAsync(ct)
+                ?? 0;
+
+            var revision =
+                new WorkRevision
                 {
-                    fileName = "file";
-                }
+                    StudentWorkId = workId,
+                    VersionNumber =
+                        lastVersion + 1,
+                    Text = text,
+                    Status =
+                        WorkStatus.SUBMITTED,
+                    SubmittedAt = now
+                };
 
-                if (fileName.Length > 255)
-                {
-                    fileName = fileName[..255];
-                }
-
+            foreach (var storedFile in
+                     storedFiles)
+            {
                 revision.Files.Add(
                     new WorkFile
                     {
-                        OriginalFileName = fileName,
-                        StorageKey = storageKey,
+                        OriginalFileName =
+                            storedFile.FileName,
+
+                        StorageKey =
+                            storedFile.StorageKey,
+
                         ContentType =
-                            string.IsNullOrWhiteSpace(
-                                file.ContentType)
-                                ? "application/octet-stream"
-                                : file.ContentType,
-                        SizeBytes = file.Length,
+                            storedFile.ContentType,
+
+                        SizeBytes =
+                            storedFile.SizeBytes,
+
                         UploadedAt = now
                     });
             }
 
-            work.Revisions.Add(revision);
-            work.Status = WorkStatus.SUBMITTED;
-            work.UpdatedAt = now;
+            db.WorkRevisions.Add(
+                revision);
 
             await db.SaveChangesAsync(ct);
+
+            await transaction.CommitAsync(ct);
         }
         catch
         {
-            foreach (var storageKey in storedKeys)
+            // Ошибка очистки физического файла
+            // не должна скрывать исходную ошибку
+            // базы или бизнес-логики.
+            foreach (var storedFile in
+                     storedFiles)
             {
-                await fileStorage.DeleteIfExistsAsync(
-                    storageKey,
-                    CancellationToken.None);
+                try
+                {
+                    await fileStorage
+                        .DeleteIfExistsAsync(
+                            storedFile.StorageKey,
+                            CancellationToken.None);
+                }
+                catch
+                {
+                    // Ошибка cleanup не заменяет
+                    // исходное исключение.
+                }
             }
 
             throw;
         }
 
-        return await workQueryService.GetForStudentAsync(
-            studentId,
-            workId,
-            ct);
+        return await workQueryService
+            .GetForStudentAsync(
+                studentId,
+                workId,
+                ct);
     }
+
+    /// <summary>
+    /// Возвращает безопасное пользовательское
+    /// имя файла для хранения в базе.
+    /// </summary>
+    private static string GetSafeFileName(
+        string fileName)
+    {
+        // Нормализуем оба варианта разделителя,
+        // поскольку имя приходит от клиента
+        // и не обязано соответствовать ОС сервера.
+        var normalized =
+            fileName.Replace(
+                '\\',
+                '/');
+
+        var name =
+            normalized
+                .Split(
+                    '/',
+                    StringSplitOptions
+                        .RemoveEmptyEntries)
+                .LastOrDefault()
+            ?? "file";
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = "file";
+        }
+
+        if (name.Length > 255)
+        {
+            name = name[..255];
+        }
+
+        return name;
+    }
+
+    /// <summary>
+    /// Создаёт стандартный конфликт,
+    /// если повторная отправка уже выполнена
+    /// другим запросом либо больше не разрешена.
+    /// </summary>
+    private static ApiException
+        CreateResubmissionConflict()
+    {
+        return new ApiException(
+            StatusCodes.Status409Conflict,
+            "WORK_RESUBMISSION_NOT_ALLOWED",
+            "Work can only be resubmitted after revision is requested.");
+    }
+
+    /// <summary>
+    /// Временные метаданные уже сохранённого
+    /// физического файла до записи версии в БД.
+    /// </summary>
+    private sealed record StoredWorkFile(
+        string StorageKey,
+        string FileName,
+        string ContentType,
+        long SizeBytes);
 }

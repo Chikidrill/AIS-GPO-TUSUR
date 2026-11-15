@@ -25,81 +25,144 @@ public static class DbInitializer
         IServiceProvider services,
         IConfiguration configuration)
     {
-        var db = services.GetRequiredService<AppDbContext>();
+        var db =
+            services.GetRequiredService<AppDbContext>();
+
+        var environment =
+            services.GetRequiredService<IHostEnvironment>();
 
         // При запуске приложения применяем
         // все неприменённые EF Core migrations.
         await db.Database.MigrateAsync();
 
-        // Тестовые данные создаются только
-        // если DevSeed:Enabled = true.
-        if (!configuration.GetValue<bool>("DevSeed:Enabled"))
+        var devSeedEnabled =
+            configuration.GetValue<bool>(
+                "DevSeed:Enabled");
+
+        if (!devSeedEnabled)
         {
             return;
         }
 
-        var hasher = new PasswordHasher<User>();
+        // Даже если кто-то случайно включит
+        // DevSeed в production-конфигурации,
+        // тестовые аккаунты созданы не будут.
+        if (!environment.IsDevelopment())
+        {
+            throw new InvalidOperationException(
+                "DevSeed cannot be used outside Development.");
+        }
+
+        var hasher =
+            new PasswordHasher<User>();
 
         // Тестовый администратор.
         if (!await db.Users.AnyAsync(
-                x => x.Email == "admin@gpo.local"))
+                x =>
+                    x.Email ==
+                    "admin@gpo.local"))
         {
-            var admin = new User
-            {
-                Email = "admin@gpo.local",
-                FirstName = "Администратор",
-                LastName = "ГПО",
-                Role = UserRole.ADMIN,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow
-            };
+            var admin =
+                new User
+                {
+                    Email =
+                        "admin@gpo.local",
 
-            admin.PasswordHash = hasher.HashPassword(
-                admin,
-                "Admin123!");
+                    FirstName =
+                        "Администратор",
+
+                    LastName =
+                        "ГПО",
+
+                    Role =
+                        UserRole.ADMIN,
+
+                    CreatedAt =
+                        DateTimeOffset.UtcNow,
+
+                    UpdatedAt =
+                        DateTimeOffset.UtcNow
+                };
+
+            admin.PasswordHash =
+                hasher.HashPassword(
+                    admin,
+                    "Admin123!");
 
             db.Users.Add(admin);
         }
 
         // Тестовый преподаватель.
         if (!await db.Users.AnyAsync(
-                x => x.Email == "teacher@gpo.local"))
+                x =>
+                    x.Email ==
+                    "teacher@gpo.local"))
         {
-            var teacher = new User
-            {
-                Email = "teacher@gpo.local",
-                FirstName = "Иван",
-                LastName = "Иванов",
-                MiddleName = "Иванович",
-                Role = UserRole.TEACHER,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow
-            };
+            var teacher =
+                new User
+                {
+                    Email =
+                        "teacher@gpo.local",
 
-            teacher.PasswordHash = hasher.HashPassword(
-                teacher,
-                "Teacher123!");
+                    FirstName =
+                        "Иван",
+
+                    LastName =
+                        "Иванов",
+
+                    MiddleName =
+                        "Иванович",
+
+                    Role =
+                        UserRole.TEACHER,
+
+                    CreatedAt =
+                        DateTimeOffset.UtcNow,
+
+                    UpdatedAt =
+                        DateTimeOffset.UtcNow
+                };
+
+            teacher.PasswordHash =
+                hasher.HashPassword(
+                    teacher,
+                    "Teacher123!");
 
             db.Users.Add(teacher);
         }
 
         // Тестовый студент.
         if (!await db.Users.AnyAsync(
-                x => x.Email == "student@gpo.local"))
+                x =>
+                    x.Email ==
+                    "student@gpo.local"))
         {
-            var student = new User
-            {
-                Email = "student@gpo.local",
-                FirstName = "Иван",
-                LastName = "Студентов",
-                Role = UserRole.STUDENT,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow
-            };
+            var student =
+                new User
+                {
+                    Email =
+                        "student@gpo.local",
 
-            student.PasswordHash = hasher.HashPassword(
-                student,
-                "Student123!");
+                    FirstName =
+                        "Иван",
+
+                    LastName =
+                        "Студентов",
+
+                    Role =
+                        UserRole.STUDENT,
+
+                    CreatedAt =
+                        DateTimeOffset.UtcNow,
+
+                    UpdatedAt =
+                        DateTimeOffset.UtcNow
+                };
+
+            student.PasswordHash =
+                hasher.HashPassword(
+                    student,
+                    "Student123!");
 
             db.Users.Add(student);
 
@@ -110,9 +173,14 @@ public static class DbInitializer
             db.StudentProfiles.Add(
                 new StudentProfile
                 {
-                    UserId = student.Id,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    UserId =
+                        student.Id,
+
+                    CreatedAt =
+                        DateTimeOffset.UtcNow,
+
+                    UpdatedAt =
+                        DateTimeOffset.UtcNow
                 });
         }
 

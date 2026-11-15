@@ -31,17 +31,80 @@ public sealed class WorkReviewService(
 
         var revision = GetSubmittedRevision(work);
 
-        revision.Status = WorkStatus.ACCEPTED;
-        revision.Grade = request.Grade;
-        revision.ReviewComment =
-            NormalizeOptionalComment(request.Comment);
-        revision.ReviewedById = teacherId;
-        revision.ReviewedAt = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
+        var comment =
+            NormalizeOptionalComment(
+                request.Comment);
 
-        work.Status = WorkStatus.ACCEPTED;
-        work.UpdatedAt = revision.ReviewedAt.Value;
+        await using var transaction =
+            await db.Database.BeginTransactionAsync(ct);
 
-        await db.SaveChangesAsync(ct);
+        // Обновляем версию только в том случае,
+        // если она всё ещё находится в SUBMITTED.
+        //
+        // Если другой параллельный запрос уже
+        // принял работу или вернул её на доработку,
+        // количество обновлённых строк будет равно 0.
+        var revisionUpdated =
+            await db.WorkRevisions
+                .Where(x =>
+                    x.Id == revision.Id &&
+                    x.Status == WorkStatus.SUBMITTED)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(
+                            x => x.Status,
+                            WorkStatus.ACCEPTED)
+                        .SetProperty(
+                            x => x.Grade,
+                            request.Grade)
+                        .SetProperty(
+                            x => x.ReviewComment,
+                            comment)
+                        .SetProperty(
+                            x => x.ReviewedById,
+                            teacherId)
+                        .SetProperty(
+                            x => x.ReviewedAt,
+                            now),
+                    ct);
+
+        if (revisionUpdated != 1)
+        {
+            await transaction.RollbackAsync(ct);
+
+            throw CreateInvalidWorkStatusException();
+        }
+
+        // StudentWork хранит состояние
+        // последней версии.
+        //
+        // Оно также обновляется условно,
+        // чтобы две конкурирующие операции
+        // не могли перезаписать друг друга.
+        var workUpdated =
+            await db.StudentWorks
+                .Where(x =>
+                    x.Id == work.Id &&
+                    x.Status == WorkStatus.SUBMITTED)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(
+                            x => x.Status,
+                            WorkStatus.ACCEPTED)
+                        .SetProperty(
+                            x => x.UpdatedAt,
+                            now),
+                    ct);
+
+        if (workUpdated != 1)
+        {
+            await transaction.RollbackAsync(ct);
+
+            throw CreateInvalidWorkStatusException();
+        }
+
+        await transaction.CommitAsync(ct);
 
         return await workQueryService.GetForTeacherAsync(
             teacherId,
@@ -61,7 +124,8 @@ public sealed class WorkReviewService(
         RequestWorkRevisionRequest request,
         CancellationToken ct)
     {
-        var comment = request.Comment?.Trim();
+        var comment =
+            request.Comment?.Trim();
 
         if (string.IsNullOrWhiteSpace(comment))
         {
@@ -79,16 +143,68 @@ public sealed class WorkReviewService(
 
         var revision = GetSubmittedRevision(work);
 
-        revision.Status = WorkStatus.NEEDS_REVISION;
-        revision.Grade = null;
-        revision.ReviewComment = comment;
-        revision.ReviewedById = teacherId;
-        revision.ReviewedAt = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
 
-        work.Status = WorkStatus.NEEDS_REVISION;
-        work.UpdatedAt = revision.ReviewedAt.Value;
+        await using var transaction =
+            await db.Database.BeginTransactionAsync(ct);
 
-        await db.SaveChangesAsync(ct);
+        // Только один конкурентный запрос
+        // может перевести SUBMITTED-версию
+        // в новое состояние.
+        var revisionUpdated =
+            await db.WorkRevisions
+                .Where(x =>
+                    x.Id == revision.Id &&
+                    x.Status == WorkStatus.SUBMITTED)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(
+                            x => x.Status,
+                            WorkStatus.NEEDS_REVISION)
+                        .SetProperty(
+                            x => x.Grade,
+                            (int?)null)
+                        .SetProperty(
+                            x => x.ReviewComment,
+                            comment)
+                        .SetProperty(
+                            x => x.ReviewedById,
+                            teacherId)
+                        .SetProperty(
+                            x => x.ReviewedAt,
+                            now),
+                    ct);
+
+        if (revisionUpdated != 1)
+        {
+            await transaction.RollbackAsync(ct);
+
+            throw CreateInvalidWorkStatusException();
+        }
+
+        var workUpdated =
+            await db.StudentWorks
+                .Where(x =>
+                    x.Id == work.Id &&
+                    x.Status == WorkStatus.SUBMITTED)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(
+                            x => x.Status,
+                            WorkStatus.NEEDS_REVISION)
+                        .SetProperty(
+                            x => x.UpdatedAt,
+                            now),
+                    ct);
+
+        if (workUpdated != 1)
+        {
+            await transaction.RollbackAsync(ct);
+
+            throw CreateInvalidWorkStatusException();
+        }
+
+        await transaction.CommitAsync(ct);
 
         return await workQueryService.GetForTeacherAsync(
             teacherId,
@@ -108,6 +224,7 @@ public sealed class WorkReviewService(
         CancellationToken ct)
     {
         var work = await db.StudentWorks
+            .AsNoTracking()
             .Include(x => x.Project)
             .Include(x => x.Revisions)
             .SingleOrDefaultAsync(
@@ -149,7 +266,8 @@ public sealed class WorkReviewService(
         StudentWork work)
     {
         var revision = work.Revisions
-            .OrderByDescending(x => x.VersionNumber)
+            .OrderByDescending(
+                x => x.VersionNumber)
             .FirstOrDefault()
             ?? throw new ApiException(
                 StatusCodes.Status409Conflict,
@@ -159,13 +277,24 @@ public sealed class WorkReviewService(
         if (revision.Status != WorkStatus.SUBMITTED ||
             work.Status != WorkStatus.SUBMITTED)
         {
-            throw new ApiException(
-                StatusCodes.Status409Conflict,
-                "INVALID_WORK_STATUS",
-                "Only submitted work can be reviewed.");
+            throw CreateInvalidWorkStatusException();
         }
 
         return revision;
+    }
+
+    /// <summary>
+    /// Создаёт стандартную ошибку,
+    /// если работа уже была обработана
+    /// или была параллельно изменена.
+    /// </summary>
+    private static ApiException
+        CreateInvalidWorkStatusException()
+    {
+        return new ApiException(
+            StatusCodes.Status409Conflict,
+            "INVALID_WORK_STATUS",
+            "Only submitted work can be reviewed.");
     }
 
     /// <summary>

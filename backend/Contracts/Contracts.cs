@@ -174,12 +174,13 @@ public sealed record StudentProfileResponse(
 
 /// <summary>
 /// Данные для изменения профиля текущего студента.
+///
+/// Номер учебной группы не редактируется студентом
+/// и должен поступать из основной информационной системы.
 /// </summary>
-/// <param name="GroupNumber">Номер учебной группы.</param>
 /// <param name="About">Информация о студенте.</param>
 /// <param name="Competencies">Компетенции студента.</param>
 public sealed record UpdateStudentProfileRequest(
-    [MaxLength(50)] string? GroupNumber,
     [MaxLength(4000)] string? About,
     [MaxLength(4000)] string? Competencies);
 

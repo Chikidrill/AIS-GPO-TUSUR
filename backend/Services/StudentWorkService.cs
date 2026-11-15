@@ -17,7 +17,8 @@ namespace AisGpo.Api.Services;
 /// </summary>
 public sealed class StudentWorkService(
     AppDbContext db,
-    IFileStorage fileStorage)
+    IFileStorage fileStorage,
+    WorkUploadValidator uploadValidator)
 {
     /// <summary>
     /// Создаёт первую отправку работы студента.
@@ -46,6 +47,10 @@ public sealed class StudentWorkService(
                 "Work must contain text or at least one file.");
         }
 
+        await uploadValidator.ValidateAsync(
+            files,
+            ct);
+
         // Отправлять работу может только студент,
         // который действительно является ACTIVE
         // участником указанного проекта.
@@ -71,6 +76,14 @@ public sealed class StudentWorkService(
                 StatusCodes.Status404NotFound,
                 "PROJECT_NOT_FOUND",
                 "Project not found.");
+
+        if (project.Status != ProjectStatus.IN_PROGRESS)
+        {
+            throw new ApiException(
+                StatusCodes.Status409Conflict,
+                "PROJECT_NOT_IN_PROGRESS",
+                "Work can only be submitted while the project is in progress.");
+        }
 
         var student = await db.Users
             .AsNoTracking()
