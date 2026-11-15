@@ -77,6 +77,14 @@ public sealed class StudentWorkService(
                 "PROJECT_NOT_FOUND",
                 "Project not found.");
 
+        if (project.Status != ProjectStatus.IN_PROGRESS)
+        {
+            throw new ApiException(
+                StatusCodes.Status409Conflict,
+                "PROJECT_NOT_IN_PROGRESS",
+                "Work can only be submitted while the project is in progress.");
+        }
+
         var student = await db.Users
             .AsNoTracking()
             .SingleOrDefaultAsync(

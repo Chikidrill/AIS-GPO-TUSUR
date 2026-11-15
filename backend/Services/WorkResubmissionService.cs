@@ -52,11 +52,12 @@ public sealed class WorkResubmissionService(
         // поскольку её состояние далее меняется
         // атомарным ExecuteUpdateAsync.
         var work = await db.StudentWorks
-            .AsNoTracking()
-            .SingleOrDefaultAsync(
-                x => x.Id == workId,
-                ct)
-            ?? throw new ApiException(
+             .AsNoTracking()
+             .Include(x => x.Project)
+             .SingleOrDefaultAsync(
+                 x => x.Id == workId,
+                 ct)
+             ?? throw new ApiException(
                 StatusCodes.Status404NotFound,
                 "WORK_NOT_FOUND",
                 "Student work not found.");
@@ -67,6 +68,14 @@ public sealed class WorkResubmissionService(
                 StatusCodes.Status403Forbidden,
                 "WORK_ACCESS_DENIED",
                 "Student can only access their own work.");
+        }
+
+        if (work.Project.Status != ProjectStatus.IN_PROGRESS)
+        {
+            throw new ApiException(
+                StatusCodes.Status409Conflict,
+                "PROJECT_NOT_IN_PROGRESS",
+                "Work can only be resubmitted while the project is in progress.");
         }
 
         if (work.Status != WorkStatus.NEEDS_REVISION)
