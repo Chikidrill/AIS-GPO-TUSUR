@@ -17,6 +17,7 @@ import StudentWorkDetailsView from '../views/StudentWorkDetailsView.vue'
 import StudentWorksView from '../views/StudentWorksView.vue'
 import AdminWorksView from '../views/AdminWorksView.vue'
 import AdminWorkDetailsView from '../views/AdminWorkDetailsView.vue'
+import ProfileView from '../views/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -198,6 +199,15 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         roles: ['ADMIN'],
+      },
+    },
+
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
+      meta: {
+        requiresAuth: true,
       },
     },
   ],
