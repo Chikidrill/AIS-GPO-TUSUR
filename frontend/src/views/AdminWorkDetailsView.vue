@@ -37,6 +37,7 @@ interface WorkRevision {
 
 interface WorkDetails {
   id: number
+  title: string
   projectId: number
   projectName: string
   studentId: number
@@ -226,10 +227,10 @@ watch(workId, () => {
 
       <template v-else-if="work">
         <header class="admin-work-details-header">
-          <h1>Просмотр работы</h1>
+          <h1>{{ work.title }}</h1>
           <p>{{ work.projectName }}</p>
         </header>
-
+        
         <section class="admin-work-details-card">
           <h2>{{ work.studentName }}</h2>
 

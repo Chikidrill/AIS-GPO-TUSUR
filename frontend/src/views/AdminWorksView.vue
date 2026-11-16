@@ -17,6 +17,7 @@ interface CurrentUser {
 
 interface StudentWork {
   id: number
+  title: string
   projectId: number
   projectName: string
   studentId: number
@@ -66,7 +67,8 @@ const filteredWorks = computed(() => {
       !query ||
       work.studentName.toLowerCase().includes(query) ||
       work.groupNumber?.toLowerCase().includes(query) ||
-      work.projectName.toLowerCase().includes(query)
+      work.projectName.toLowerCase().includes(query) ||
+      work.title.toLowerCase().includes(query)
 
     const matchesProject =
       !selectedProject.value ||
@@ -133,7 +135,7 @@ onMounted(loadPage)
           v-model="search"
           class="admin-works-filter"
           type="search"
-          placeholder="Поиск по студенту, группе или проекту"
+          placeholder="Поиск по студенту, группе, проекту или работе"
         >
 
         <select
@@ -199,6 +201,7 @@ onMounted(loadPage)
             <span>Студент</span>
             <span>Группа</span>
             <span>Проект</span>
+            <span>Название работы</span>
             <span>Версия</span>
             <span>Дата отправки</span>
             <span>Статус</span>
@@ -217,6 +220,8 @@ onMounted(loadPage)
             <span>{{ work.groupNumber ?? '—' }}</span>
 
             <span>{{ work.projectName }}</span>
+
+            <span class="admin-works-table__work-name"> {{ work.title }} </span>
 
             <span>№ {{ work.latestVersionNumber }}</span>
 
