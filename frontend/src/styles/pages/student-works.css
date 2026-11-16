@@ -94,14 +94,15 @@
 .student-works-table__row {
   display: grid;
   grid-template-columns:
-    minmax(230px, 2fr)
-    90px
-    160px
-    140px
+    minmax(180px, 1.5fr)
+    minmax(180px, 1.5fr)
+    70px
+    135px
+    130px
     115px;
 
   align-items: center;
-  min-width: 820px;
+  min-width: 850px;
   padding: 0 12px;
 }
 
@@ -205,6 +206,7 @@
 
 .student-works-button--primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
+  color: var(--color-primary);
 }
 
 .student-works-button:disabled {
@@ -386,21 +388,26 @@
   font-size: 11px;
 }
 
-@media (max-width: 700px) {
-  .student-works-header h1 {
-    font-size: 24px;
-  }
+.student-works-form input[type='text'] {
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 14px;
+  box-sizing: border-box;
 
-  .student-works-section-heading {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
 
-  .student-works-panel {
-    padding: 16px;
-  }
+  background: #fff;
+  color: var(--color-text-primary);
 
-  .student-works-file {
-    flex-wrap: wrap;
-  }
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.student-works-form input[type='text']:focus {
+  outline: 1px solid var(--color-primary);
+}
+
+.student-works-table__row > span {
+  overflow-wrap: anywhere;
 }

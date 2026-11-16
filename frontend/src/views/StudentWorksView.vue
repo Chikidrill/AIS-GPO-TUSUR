@@ -28,6 +28,7 @@ interface ActiveProject {
 
 interface StudentWork {
   id: number
+  title: string
   projectId: number
   projectName: string
   studentId: number
@@ -57,6 +58,7 @@ const submitting = ref(false)
 const error = ref('')
 const submitError = ref('')
 
+const workTitle = ref('')
 const workText = ref('')
 const selectedFiles = ref<File[]>([])
 
@@ -66,18 +68,14 @@ const statusLabels: Record<WorkStatus, string> = {
   ACCEPTED: 'Принята',
 }
 
-const hasWorkInActiveProject = computed(() => {
-  if (!activeProject.value) return false
-
-  return works.value.some(
-    (work) => work.projectId === activeProject.value?.id,
-  )
-})
-
 const canSubmit = computed(() => {
   return (
-    workText.value.trim().length > 0 ||
-    selectedFiles.value.some((file) => file.size > 0)
+    workTitle.value.trim().length > 0 &&
+    workTitle.value.trim().length <= 255 &&
+    (
+      workText.value.trim().length > 0 ||
+      selectedFiles.value.some((file) => file.size > 0)
+    )
   )
 })
 
@@ -149,10 +147,10 @@ async function loadPage() {
   }
 }
 
+
 async function submitWork() {
   if (
     !activeProject.value ||
-    hasWorkInActiveProject.value ||
     !canSubmit.value ||
     submitting.value
   ) {
@@ -163,6 +161,8 @@ async function submitWork() {
   submitError.value = ''
 
   const formData = new FormData()
+
+  formData.append('Title', workTitle.value.trim())
 
   if (workText.value.trim()) {
     formData.append('Text', workText.value.trim())
@@ -182,15 +182,32 @@ async function submitWork() {
 
     await router.push(`/works/${data.id}`)
   } catch (err) {
-    if (isAxiosError(err) && err.response?.status === 409) {
-      submitError.value =
-        'Работа уже отправлена. Обновите страницу.'
-    } else if (
-      isAxiosError(err) &&
-      err.response?.status === 403
-    ) {
-      submitError.value =
-        'Отправлять работы могут только активные участники проекта.'
+    if (isAxiosError(err)) {
+      switch (err.response?.status) {
+        case 400:
+          submitError.value =
+            'Проверьте название, содержимое и формат прикреплённых файлов.'
+          break
+
+        case 403:
+          submitError.value =
+            'Отправлять работы могут только активные участники проекта.'
+          break
+
+        case 409:
+          submitError.value =
+            'Отправлять работы можно только в проект, находящийся в процессе выполнения.'
+          break
+
+        case 413:
+          submitError.value =
+            'Превышен допустимый размер загружаемых файлов.'
+          break
+
+        default:
+          submitError.value =
+            'Не удалось отправить работу. Попробуйте ещё раз.'
+      }
     } else {
       submitError.value =
         'Не удалось отправить работу. Попробуйте ещё раз.'
@@ -199,6 +216,7 @@ async function submitWork() {
     submitting.value = false
   }
 }
+
 
 async function logout() {
   localStorage.removeItem('accessToken')
@@ -259,6 +277,7 @@ onMounted(loadPage)
             class="student-works-table"
           >
             <div class="student-works-table__header">
+              <span>Название работы</span>
               <span>Проект</span>
               <span>Версия</span>
               <span>Дата отправки</span>
@@ -271,7 +290,11 @@ onMounted(loadPage)
               :key="work.id"
               class="student-works-table__row"
             >
-              <span class="student-works-table__name">
+               <span class="student-works-table__name">
+                {{ work.title }}
+              </span>
+
+              <span>
                 {{ work.projectName }}
               </span>
 
@@ -307,8 +330,9 @@ onMounted(loadPage)
         </section>
 
         <section
-          v-if="activeProject && !hasWorkInActiveProject"
+          v-if="activeProject"
           class="student-works-panel"
+          id="new-work"
         >
           <h2>Отправить работу</h2>
 
@@ -320,6 +344,21 @@ onMounted(loadPage)
             class="student-works-form"
             @submit.prevent="submitWork"
           >
+            <label for="student-work-title">Название работы</label>
+            <input
+              id="student-work-title"
+              v-model="workTitle"
+              type="text"
+              maxlength="255"
+              placeholder="Например: Отчёт №1 - ТЗ"
+              required
+              :disabled="submitting"
+            >
+
+            <p class="student-works-hint">
+              {{ workTitle.length }} / 255 символов
+            </p>
+
             <label for="student-work-text">
               Текст работы
             </label>
