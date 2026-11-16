@@ -119,3 +119,17 @@
 .app-header__menu button:hover {
   background: var(--color-background);
 }
+
+.app-header__menu-link {
+  display: block;
+  padding: 10px 14px;
+
+  color: var(--color-text-primary);
+  font-size: 11px;
+  text-align: left;
+  text-decoration: none;
+}
+
+.app-header__menu-link:hover {
+  background: var(--color-background);
+}

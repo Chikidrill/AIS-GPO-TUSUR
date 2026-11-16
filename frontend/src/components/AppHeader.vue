@@ -84,6 +84,14 @@ const roleName = computed(() => {
         v-if="menuOpen"
         class="app-header__menu"
       >
+        <RouterLink
+          to="/profile"
+          class="app-header__menu-link"
+          @click="menuOpen = false"
+        >
+          Мой профиль
+        </RouterLink>
+
         <button
           type="button"
           @click="emit('logout')"
