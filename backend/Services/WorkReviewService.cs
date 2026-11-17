@@ -1,6 +1,7 @@
 ﻿using AisGpo.Api.Common;
 using AisGpo.Api.Contracts.Works;
 using AisGpo.Api.Data;
+using AisGpo.Api.Domain;
 using AisGpo.Api.Domain.Works;
 using Microsoft.EntityFrameworkCore;
 
@@ -253,6 +254,16 @@ public sealed class WorkReviewService(
                 StatusCodes.Status403Forbidden,
                 "WORK_REVIEW_ACCESS_DENIED",
                 "Teacher can only review works from supervised projects.");
+        }
+
+        // Проверка и изменение работы разрешены
+        // только во время выполнения проекта.
+        if (work.Project.Status != ProjectStatus.IN_PROGRESS)
+        {
+            throw new ApiException(
+                StatusCodes.Status409Conflict,
+                "PROJECT_NOT_IN_PROGRESS",
+                "Work can only be reviewed while the project is in progress.");
         }
 
         return work;
