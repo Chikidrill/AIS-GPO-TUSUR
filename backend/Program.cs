@@ -280,6 +280,8 @@ builder.Services.AddScoped<WorkResubmissionService>();
 
 builder.Services.AddScoped<ProjectMembershipService>();
 
+builder.Services.AddScoped<ProjectLifecycleService>();
+
 // Завершаем построение приложения.
 var app = builder.Build();
 

@@ -2,6 +2,7 @@
 using AisGpo.Api.Contracts;
 using AisGpo.Api.Data;
 using AisGpo.Api.Domain;
+using AisGpo.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,8 @@ namespace AisGpo.Api.Controllers;
 [Authorize]
 [Route("api/v1/projects")]
 public sealed class ProjectsController(
-    AppDbContext db) : ControllerBase
+    AppDbContext db,
+    ProjectLifecycleService lifecycle) : ControllerBase
 {
     /// <summary>
     /// Возвращает доступный текущему пользователю
@@ -453,48 +455,11 @@ public sealed class ProjectsController(
             UpdateProjectSupervisorRequest request,
             CancellationToken ct)
     {
-        var project = await db.Projects
-            .Include(x => x.Supervisor)
-            .SingleOrDefaultAsync(
-                x => x.Id == projectId,
+        var project =
+            await lifecycle.ChangeSupervisorAsync(
+                projectId,
+                request.SupervisorId,
                 ct);
-
-        if (project is null)
-        {
-            return NotFound();
-        }
-
-        User? supervisor = null;
-
-        if (request.SupervisorId is not null)
-        {
-            supervisor = await db.Users
-                .SingleOrDefaultAsync(
-                    x =>
-                        x.Id == request.SupervisorId.Value &&
-                        x.Role == UserRole.TEACHER,
-                    ct);
-
-            if (supervisor is null)
-            {
-                throw new ApiException(
-                    StatusCodes.Status400BadRequest,
-                    "INVALID_SUPERVISOR",
-                    "Project supervisor must be an existing teacher.");
-            }
-        }
-
-        // null означает снятие руководителя.
-        project.SupervisorId =
-            supervisor?.Id;
-
-        project.Supervisor =
-            supervisor;
-
-        project.UpdatedAt =
-            DateTimeOffset.UtcNow;
-
-        await db.SaveChangesAsync(ct);
 
         var occupiedPlaces =
             await db.ProjectMemberships
@@ -508,10 +473,8 @@ public sealed class ProjectsController(
         return Ok(
             MapProject(
                 project,
-                occupiedPlaces,
-                supervisor));
+                occupiedPlaces));
     }
-
     /// <summary>
     /// Изменяет текущий статус проекта.
     /// </summary>
@@ -545,34 +508,11 @@ public sealed class ProjectsController(
             UpdateProjectStatusRequest request,
             CancellationToken ct)
     {
-        var project = await db.Projects
-            .Include(x => x.Supervisor)
-            .SingleOrDefaultAsync(
-                x => x.Id == projectId,
+        var project =
+            await lifecycle.ChangeStatusAsync(
+                projectId,
+                request.Status,
                 ct);
-
-        if (project is null)
-        {
-            return NotFound();
-        }
-
-        if (!IsAllowedStatusTransition(
-        project.Status,
-        request.Status))
-        {
-            throw new ApiException(
-                StatusCodes.Status409Conflict,
-                "INVALID_PROJECT_STATUS_TRANSITION",
-                $"Project status cannot be changed from {project.Status} to {request.Status}.");
-        }
-
-        project.Status =
-            request.Status;
-
-        project.UpdatedAt =
-            DateTimeOffset.UtcNow;
-
-        await db.SaveChangesAsync(ct);
 
         var occupiedPlaces =
             await db.ProjectMemberships
@@ -588,7 +528,6 @@ public sealed class ProjectsController(
                 project,
                 occupiedPlaces));
     }
-
     /// <summary>
     /// Удаляет проект.
     /// </summary>
@@ -631,8 +570,8 @@ public sealed class ProjectsController(
             return NotFound();
         }
 
-        // Проверяются все заявки,
-        // включая исторические.
+        // Проверяются все связанные данные,
+        // включая исторические записи.
         var hasApplications =
             await db.ParticipationApplications
                 .AnyAsync(
@@ -640,8 +579,13 @@ public sealed class ProjectsController(
                         x.ProjectId == projectId,
                     ct);
 
-        // Аналогично проверяется вся история
-        // участия студентов в проекте.
+        var hasLeaveRequests =
+            await db.ProjectLeaveRequests
+                .AnyAsync(
+                    x =>
+                        x.ProjectId == projectId,
+                    ct);
+
         var hasMemberships =
             await db.ProjectMemberships
                 .AnyAsync(
@@ -649,15 +593,22 @@ public sealed class ProjectsController(
                         x.ProjectId == projectId,
                     ct);
 
+        var hasWorks =
+            await db.StudentWorks
+                .AnyAsync(
+                    x =>
+                        x.ProjectId == projectId,
+                    ct);
         if (hasApplications ||
-            hasMemberships)
+            hasLeaveRequests ||
+            hasMemberships ||
+            hasWorks)
         {
             throw new ApiException(
                 StatusCodes.Status409Conflict,
                 "PROJECT_HAS_DEPENDENCIES",
-                "Project cannot be deleted because it has applications or participants.");
+                "Project cannot be deleted because it has related data.");
         }
-
         db.Projects.Remove(project);
 
         await db.SaveChangesAsync(ct);
@@ -825,46 +776,6 @@ public sealed class ProjectsController(
         return string.IsNullOrWhiteSpace(value)
             ? null
             : value.Trim();
-    }
-
-    /// <summary>
-    /// Проверяет допустимость перехода
-    /// между состояниями проекта.
-    /// </summary>
-    private static bool IsAllowedStatusTransition(
-        ProjectStatus current,
-        ProjectStatus next)
-    {
-        // Повторная установка того же статуса
-        // считается допустимой идемпотентной операцией.
-        if (current == next)
-        {
-            return true;
-        }
-
-        return current switch
-        {
-            ProjectStatus.DRAFT =>
-                next is ProjectStatus.OPEN
-                    or ProjectStatus.ARCHIVED,
-
-            ProjectStatus.OPEN =>
-                next is ProjectStatus.DRAFT
-                    or ProjectStatus.IN_PROGRESS
-                    or ProjectStatus.ARCHIVED,
-
-            ProjectStatus.IN_PROGRESS =>
-                next is ProjectStatus.COMPLETED
-                    or ProjectStatus.ARCHIVED,
-
-            ProjectStatus.COMPLETED =>
-                next is ProjectStatus.ARCHIVED,
-
-            ProjectStatus.ARCHIVED =>
-                false,
-
-            _ => false
-        };
     }
 
     /// <summary>

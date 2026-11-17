@@ -133,6 +133,12 @@ public enum MembershipStatus
     ACTIVE,
 
     /// <summary>
+    /// Участие студента завершено
+    /// вместе с завершением проекта.
+    /// </summary>
+    FINISHED,
+
+    /// <summary>
     /// Студент самостоятельно покинул проект.
     /// </summary>
     LEFT,
