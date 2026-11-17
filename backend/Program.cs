@@ -261,6 +261,9 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<
     ParticipationApplicationService>();
 
+builder.Services.AddScoped<
+    ProjectLeaveRequestService>();
+
 builder.Services.AddScoped<MeProjectService>();
 
 builder.Services.AddScoped<WorkUploadValidator>();
