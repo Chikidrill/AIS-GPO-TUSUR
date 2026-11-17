@@ -171,6 +171,71 @@ namespace AisGpo.Api.Migrations
                     b.ToTable("projects", (string)null);
                 });
 
+            modelBuilder.Entity("AisGpo.Api.Domain.ProjectLeaveRequest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<long?>("ReviewedById")
+                        .HasColumnType("bigint")
+                        .HasColumnName("reviewed_by");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<long>("StudentId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("student_id");
+
+                    b.Property<DateTimeOffset?>("TakenForReviewAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("taken_for_review_at");
+
+                    b.Property<long?>("TakenForReviewById")
+                        .HasColumnType("bigint")
+                        .HasColumnName("taken_for_review_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("StudentId", "ProjectId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_active_leave_request_per_project")
+                        .HasFilter("status IN ('CREATED', 'UNDER_REVIEW')");
+
+                    b.ToTable("project_leave_requests", (string)null);
+                });
+
             modelBuilder.Entity("AisGpo.Api.Domain.ProjectMembership", b =>
                 {
                     b.Property<long>("Id")
@@ -506,6 +571,25 @@ namespace AisGpo.Api.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Supervisor");
+                });
+
+            modelBuilder.Entity("AisGpo.Api.Domain.ProjectLeaveRequest", b =>
+                {
+                    b.HasOne("AisGpo.Api.Domain.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AisGpo.Api.Domain.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("AisGpo.Api.Domain.ProjectMembership", b =>

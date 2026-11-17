@@ -90,6 +90,39 @@ public enum ApplicationStatus
 }
 
 /// <summary>
+/// Состояние заявки студента на выход из проекта.
+/// </summary>
+public enum LeaveRequestStatus
+{
+    /// <summary>
+    /// Заявка создана студентом
+    /// и ожидает обработки.
+    /// </summary>
+    CREATED,
+
+    /// <summary>
+    /// Заявка взята администратором
+    /// на рассмотрение.
+    /// </summary>
+    UNDER_REVIEW,
+
+    /// <summary>
+    /// Выход из проекта одобрен.
+    /// </summary>
+    APPROVED,
+
+    /// <summary>
+    /// Заявка на выход отклонена.
+    /// </summary>
+    REJECTED,
+
+    /// <summary>
+    /// Заявка отменена студентом.
+    /// </summary>
+    CANCELLED
+}
+
+/// <summary>
 /// Состояние участия студента в проекте.
 /// </summary>
 public enum MembershipStatus
@@ -390,6 +423,87 @@ public sealed class ParticipationApplication
     /// <summary>
     /// Причина отклонения заявки.
     /// Заполняется для заявок со статусом REJECTED.
+    /// </summary>
+    public string? RejectionReason { get; set; }
+}
+
+/// <summary>
+/// Заявка студента на добровольный выход из проекта.
+///
+/// До одобрения заявки студент продолжает
+/// оставаться ACTIVE участником проекта.
+/// При одобрении соответствующий ProjectMembership
+/// переводится в состояние LEFT.
+/// </summary>
+public sealed class ProjectLeaveRequest
+{
+    /// <summary>
+    /// Уникальный идентификатор заявки.
+    /// </summary>
+    public long Id { get; set; }
+
+    /// <summary>
+    /// Идентификатор студента,
+    /// подавшего заявку на выход.
+    /// </summary>
+    public long StudentId { get; set; }
+
+    /// <summary>
+    /// Студент, подавший заявку.
+    /// </summary>
+    public User Student { get; set; } = null!;
+
+    /// <summary>
+    /// Идентификатор проекта,
+    /// из которого студент хочет выйти.
+    /// </summary>
+    public long ProjectId { get; set; }
+
+    /// <summary>
+    /// Проект, из которого студент хочет выйти.
+    /// </summary>
+    public Project Project { get; set; } = null!;
+
+    /// <summary>
+    /// Текущий статус заявки.
+    /// </summary>
+    public LeaveRequestStatus Status { get; set; }
+
+    /// <summary>
+    /// Причина выхода, указанная студентом.
+    /// Может отсутствовать.
+    /// </summary>
+    public string? Reason { get; set; }
+
+    /// <summary>
+    /// Дата создания заявки.
+    /// </summary>
+    public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>
+    /// Дата взятия заявки на рассмотрение.
+    /// </summary>
+    public DateTimeOffset? TakenForReviewAt { get; set; }
+
+    /// <summary>
+    /// Идентификатор администратора,
+    /// взявшего заявку на рассмотрение.
+    /// </summary>
+    public long? TakenForReviewById { get; set; }
+
+    /// <summary>
+    /// Дата принятия окончательного решения.
+    /// </summary>
+    public DateTimeOffset? ReviewedAt { get; set; }
+
+    /// <summary>
+    /// Идентификатор администратора,
+    /// принявшего окончательное решение.
+    /// </summary>
+    public long? ReviewedById { get; set; }
+
+    /// <summary>
+    /// Причина отклонения заявки.
     /// </summary>
     public string? RejectionReason { get; set; }
 }

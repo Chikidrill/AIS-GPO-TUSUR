@@ -37,6 +37,12 @@ public sealed class AppDbContext(
         Set<ParticipationApplication>();
 
     /// <summary>
+    /// Заявки студентов на выход из проектов.
+    /// </summary>
+    public DbSet<ProjectLeaveRequest> ProjectLeaveRequests =>
+        Set<ProjectLeaveRequest>();
+
+    /// <summary>
     /// Записи о фактическом участии студентов в проектах.
     /// </summary>
     public DbSet<ProjectMembership> ProjectMemberships =>
@@ -332,6 +338,78 @@ public sealed class AppDbContext(
                     "status IN ('CREATED', 'UNDER_REVIEW')")
                 .HasDatabaseName(
                     "uq_active_application_per_project");
+        });
+
+        // -------------------------------------------------
+        // ProjectLeaveRequest -> project_leave_requests
+        // -------------------------------------------------
+        b.Entity<ProjectLeaveRequest>(e =>
+        {
+            e.ToTable("project_leave_requests");
+
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.Id)
+                .HasColumnName("id");
+
+            e.Property(x => x.StudentId)
+                .HasColumnName("student_id");
+
+            e.Property(x => x.ProjectId)
+                .HasColumnName("project_id");
+
+            e.Property(x => x.Status)
+                .HasColumnName("status")
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            e.Property(x => x.Reason)
+                .HasColumnName("reason")
+                .HasMaxLength(4000);
+
+            e.Property(x => x.CreatedAt)
+                .HasColumnName("created_at");
+
+            e.Property(x => x.TakenForReviewAt)
+                .HasColumnName("taken_for_review_at");
+
+            e.Property(x => x.TakenForReviewById)
+                .HasColumnName("taken_for_review_by");
+
+            e.Property(x => x.ReviewedAt)
+                .HasColumnName("reviewed_at");
+
+            e.Property(x => x.ReviewedById)
+                .HasColumnName("reviewed_by");
+
+            e.Property(x => x.RejectionReason)
+                .HasColumnName("rejection_reason")
+                .HasMaxLength(4000);
+
+            e.HasOne(x => x.Student)
+                .WithMany()
+                .HasForeignKey(x => x.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.Project)
+                .WithMany()
+                .HasForeignKey(x => x.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // У студента может быть только одна
+            // незавершённая заявка на выход
+            // из конкретного проекта.
+            e.HasIndex(x => new
+            {
+                x.StudentId,
+                x.ProjectId
+            })
+                .IsUnique()
+                .HasFilter(
+                    "status IN ('CREATED', 'UNDER_REVIEW')")
+                .HasDatabaseName(
+                    "uq_active_leave_request_per_project");
         });
 
         // -------------------------------------------------
