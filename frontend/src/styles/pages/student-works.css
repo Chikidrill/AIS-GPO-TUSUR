@@ -69,6 +69,7 @@
   color: var(--color-text-secondary);
   font-size: 11px;
   line-height: 1.6;
+  
 }
 
 .student-works-hint {
@@ -410,4 +411,11 @@
 
 .student-works-table__row > span {
   overflow-wrap: anywhere;
+}
+
+.student-works-files-muted {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0;
 }

@@ -6,6 +6,8 @@ import { useRouter } from 'vue-router'
 import { http } from '../api/http'
 import AppLayout from '../components/AppLayout.vue'
 
+import {WORK_FILE_ACCEPT, validateWorkFiles} from '../utils/workFileValidation.ts'
+
 type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT'
 
 type WorkStatus =
@@ -57,6 +59,7 @@ const submitting = ref(false)
 
 const error = ref('')
 const submitError = ref('')
+const fileError = ref('')
 
 const workTitle = ref('')
 const workText = ref('')
@@ -70,6 +73,8 @@ const statusLabels: Record<WorkStatus, string> = {
 
 const canSubmit = computed(() => {
   return (
+    !fileError.value &&
+    validateWorkFiles(selectedFiles.value) === null &&
     workTitle.value.trim().length > 0 &&
     workTitle.value.trim().length <= 255 &&
     (
@@ -98,17 +103,29 @@ function formatFileSize(bytes: number) {
 
   return `${(bytes / 1024 / 1024).toFixed(1)} МБ`
 }
-
 function handleFileChange(event: Event) {
   const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = ''
 
-  selectedFiles.value = Array.from(input.files ?? [])
+  const validationError = validateWorkFiles(files)
+
+  if (validationError) {
+    selectedFiles.value = []
+    fileError.value = validationError
+    return
+  }
+
+  selectedFiles.value = files
+  fileError.value = ''
 }
 
 function removeFile(index: number) {
   selectedFiles.value = selectedFiles.value.filter(
     (_, fileIndex) => fileIndex !== index,
   )
+
+  fileError.value = ''
 }
 
 async function loadPage() {
@@ -154,6 +171,13 @@ async function submitWork() {
     !canSubmit.value ||
     submitting.value
   ) {
+    return
+  }
+
+  const validationError = validateWorkFiles(selectedFiles.value)
+
+  if (validationError) {
+    fileError.value = validationError
     return
   }
 
@@ -378,11 +402,25 @@ onMounted(loadPage)
             <label for="student-work-files">
               Прикреплённые файлы
             </label>
+            <p class="student-works-files-muted">
+              До 5 файлов, максимум 20 МБ на файл
+              и 50 МБ суммарно.
+              Форматы: PDF, DOC, DOCX, TXT, PNG, JPG, JPEG, ZIP.
+            </p>
 
+            <p
+              v-if="fileError"
+              class="student-works-error"
+              role="alert"
+            >
+              {{ fileError }}
+            </p>
             <input
               id="student-work-files"
               type="file"
               multiple
+              :accept="WORK_FILE_ACCEPT"
+              :disabled="submitting"
               @change="handleFileChange"
             >
 
