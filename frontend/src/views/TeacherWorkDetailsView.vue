@@ -36,6 +36,7 @@ interface WorkRevision {
 
 interface WorkDetails {
   id: number
+  title: string
   projectId: number
   projectName: string
   studentId: number
@@ -268,8 +269,7 @@ onMounted(loadPage)
 
       <template v-else-if="work">
         <header class="teacher-work-details-header">
-          <h1>Проверка работы</h1>
-
+          <h1>{{ work.title }}</h1>
           <p>{{ work.projectName }}</p>
         </header>
 

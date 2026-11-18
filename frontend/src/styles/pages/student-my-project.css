@@ -284,3 +284,10 @@
 .student-project-state--error {
   color: #b83838;
 }
+.student-project-table__name small {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 400;
+}

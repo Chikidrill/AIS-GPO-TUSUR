@@ -6,6 +6,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { http } from '../api/http'
 import AppLayout from '../components/AppLayout.vue'
 
+import {WORK_FILE_ACCEPT, validateWorkFiles} from '../utils/workFileValidation'
+
 type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT'
 type WorkStatus = 'SUBMITTED' | 'NEEDS_REVISION' | 'ACCEPTED'
 
@@ -37,6 +39,7 @@ interface WorkRevision {
 
 interface WorkDetails {
   id: number
+  title:string
   projectId: number
   projectName: string
   studentId: number
@@ -62,6 +65,8 @@ const submitting = ref(false)
 const error = ref('')
 const submitError = ref('')
 const successMessage = ref('')
+
+const fileError = ref('')
 
 const workText = ref('')
 const selectedFiles = ref<File[]>([])
@@ -100,8 +105,12 @@ const canResubmit = computed(
 
 const canSubmit = computed(() => {
   return (
-    workText.value.trim().length > 0 ||
-    selectedFiles.value.some((file) => file.size > 0)
+    !fileError.value &&
+    validateWorkFiles(selectedFiles.value) === null &&
+    (
+      workText.value.trim().length > 0 ||
+      selectedFiles.value.some((file) => file.size > 0)
+    )
   )
 })
 
@@ -127,13 +136,29 @@ function formatFileSize(bytes: number) {
 
 function handleFileChange(event: Event) {
   const input = event.target as HTMLInputElement
-  selectedFiles.value = Array.from(input.files ?? [])
+  const files = Array.from(input.files ?? [])
+
+  // Позволяет повторно выбрать тот же файл.
+  input.value = ''
+
+  const validationError = validateWorkFiles(files)
+
+  if (validationError) {
+    selectedFiles.value = []
+    fileError.value = validationError
+    return
+  }
+
+  selectedFiles.value = files
+  fileError.value = ''
 }
 
 function removeFile(index: number) {
   selectedFiles.value = selectedFiles.value.filter(
     (_, fileIndex) => fileIndex !== index,
   )
+
+  fileError.value = ''
 }
 
 async function loadPage() {
@@ -212,6 +237,20 @@ async function resubmitWork() {
     return
   }
 
+  // Повторно проверяем файлы перед отправкой
+  const validationError = validateWorkFiles(
+    selectedFiles.value,
+  )
+
+  if (validationError) {
+    fileError.value = validationError
+    return
+  }
+
+  submitting.value = true
+  submitError.value = ''
+  successMessage.value = ''
+
   submitting.value = true
   submitError.value = ''
   successMessage.value = ''
@@ -240,7 +279,7 @@ async function resubmitWork() {
       latestRevision.value?.versionNumber ?? null
 
     selectedFiles.value = []
-
+    fileError.value = ''
     successMessage.value =
       'Исправленная работа успешно отправлена на проверку.'
   } catch (err) {
@@ -304,8 +343,7 @@ onMounted(loadPage)
 
       <template v-else-if="work">
         <header class="student-works-header">
-          <h1>Моя работа</h1>
-
+          <h1>{{ work.title }}</h1>
           <p>{{ work.projectName }}</p>
         </header>
 
@@ -487,6 +525,8 @@ onMounted(loadPage)
               id="student-revision-files"
               type="file"
               multiple
+              :accept="WORK_FILE_ACCEPT"
+              :disabled="submitting"
               @change="handleFileChange"
             >
 
@@ -515,7 +555,24 @@ onMounted(loadPage)
               </div>
             </div>
 
-            <p class="student-works-muted">
+            <p class="student-works-files-muted">
+              Можно прикрепить не более 5 файлов.
+              Максимальный размер одного файла — 20 МБ,
+              общий размер — 50 МБ.
+              Допустимые форматы: PDF, DOC, DOCX, TXT,
+              PNG, JPG, JPEG, ZIP.
+            </p>
+
+            <p
+              v-if="fileError"
+              class="student-works-error"
+              role="alert"
+            >
+              {{ fileError }}
+            </p>
+
+
+            <p class="student-works-files-muted">
               Если нужны файлы в новой версии,
               прикрепите их заново.
             </p>

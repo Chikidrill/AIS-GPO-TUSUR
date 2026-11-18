@@ -77,15 +77,16 @@
 .admin-works-table__row {
   display: grid;
   grid-template-columns:
-    minmax(170px, 1.3fr)
-    90px
-    minmax(220px, 1.6fr)
-    70px
+    minmax(150px, 1.2fr)
+    75px
+    minmax(170px, 1.4fr)
+    minmax(170px, 1.4fr)
+    65px
     125px
     130px;
 
   align-items: center;
-  min-width: 900px;
+  min-width: 920px;
   padding: 0 16px;
 }
 
@@ -143,4 +144,29 @@
 .admin-works-table__status--accepted {
   background: #ebfaed;
   color: #2e8c47;
+}
+
+.admin-works-table__work-name {
+  font-weight: 600;
+}
+.admin-works-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  background: #f7f7fb;
+  font-size: 12px;
+}
+
+.admin-works-context button {
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }

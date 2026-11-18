@@ -42,6 +42,7 @@ interface ProjectDetails {
 
 interface StudentWork {
   id: number
+  title: string
   projectId: number
   projectName: string
   status: WorkStatus
@@ -67,7 +68,9 @@ const currentUser = ref<CurrentUser | null>(null)
 const myProject = ref<MyProject | null>(null)
 const projectDetails = ref<ProjectDetails | null>(null)
 const works = ref<StudentWork[]>([])
-const workDetails = ref<WorkDetails | null>(null)
+const latestRevisions = ref<
+  Partial<Record<number, WorkRevision>>
+>({})
 
 const loading = ref(true)
 const error = ref('')
@@ -87,29 +90,6 @@ const projectWorks = computed(() => {
   )
 })
 
-const currentWork = computed(() => projectWorks.value[0] ?? null)
-
-const latestRevision = computed(() => {
-  const revisions = workDetails.value?.revisions ?? []
-
-  return [...revisions].sort(
-    (a, b) => b.versionNumber - a.versionNumber,
-  )[0] ?? null
-})
-
-const workButtonText = computed(() => {
-  if (!currentWork.value) return 'Загрузить работу'
-
-  return currentWork.value.status === 'NEEDS_REVISION'
-    ? 'Доработать работу'
-    : 'Открыть работу'
-})
-
-const workButtonUrl = computed(() => {
-  return currentWork.value
-    ? `/works/${currentWork.value.id}`
-    : '/works'
-})
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
@@ -119,10 +99,13 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
+
 async function loadPage() {
   loading.value = true
   error.value = ''
   noProject.value = false
+  latestRevisions.value = {}
+  projectDetails.value = null
 
   try {
     const [userResponse, worksResponse, project] =
@@ -155,33 +138,37 @@ async function loadPage() {
       return
     }
 
-    const currentProjectWork = works.value.find(
-      (work) => work.projectId === project.id,
-    )
+    const [detailsResult, workResults] =
+      await Promise.all([
+        Promise.allSettled([
+          http.get<ProjectDetails>(`/projects/${project.id}`),
+        ]),
 
-    // Дополнительные сведения могут быть недоступны
-    // для закрытых проектов. Основная страница при этом
-    // должна продолжать работать через /me/project.
-    const [detailsResult, workResult] =
-      await Promise.allSettled([
-        http.get<ProjectDetails>(`/projects/${project.id}`),
-
-        currentProjectWork
-          ? http.get<WorkDetails>(
-              `/me/works/${currentProjectWork.id}`,
-            )
-          : Promise.resolve(null),
+        Promise.allSettled(
+          projectWorks.value.map((work) =>
+            http.get<WorkDetails>(`/me/works/${work.id}`),
+          ),
+        ),
       ])
 
-    if (detailsResult.status === 'fulfilled') {
-      projectDetails.value = detailsResult.value.data
+    const projectResult = detailsResult[0]
+
+    if (projectResult?.status === 'fulfilled') {
+      projectDetails.value = projectResult.value.data
     }
 
-    if (
-      workResult.status === 'fulfilled' &&
-      workResult.value
-    ) {
-      workDetails.value = workResult.value.data
+    for (const result of workResults) {
+      if (result.status !== 'fulfilled') continue
+
+      const details = result.value.data
+
+      const latestRevision = [...details.revisions].sort(
+        (a, b) => b.versionNumber - a.versionNumber,
+      )[0]
+
+      if (latestRevision) {
+        latestRevisions.value[details.id] = latestRevision
+      }
     }
   } catch {
     error.value = 'Не удалось загрузить данные проекта.'
@@ -189,6 +176,7 @@ async function loadPage() {
     loading.value = false
   }
 }
+
 
 async function logout() {
   localStorage.removeItem('accessToken')
@@ -304,10 +292,10 @@ onMounted(loadPage)
             </p>
 
             <RouterLink
-              :to="workButtonUrl"
+              to="/works"
               class="student-project-button student-project-button--primary"
             >
-              {{ workButtonText }}
+              Загрузить новую работу
             </RouterLink>
 
             <a
@@ -357,8 +345,8 @@ onMounted(loadPage)
               class="student-project-table__row"
             >
               <span class="student-project-table__name">
-                Работа №{{ work.id }}
-                (версия {{ work.latestVersionNumber }})
+                {{ work.title }}
+                <small>Версия {{ work.latestVersionNumber }}</small>
               </span>
 
               <span>
@@ -373,19 +361,11 @@ onMounted(loadPage)
               </span>
 
               <span>
-                {{
-                  workDetails?.id === work.id
-                    ? (latestRevision?.grade ?? '—')
-                    : '—'
-                }}
+                {{ latestRevisions[work.id]?.grade ?? '—' }}
               </span>
-
+              
               <span class="student-project-table__comment">
-                {{
-                  workDetails?.id === work.id
-                    ? (latestRevision?.reviewComment || '—')
-                    : '—'
-                }}
+                {{ latestRevisions[work.id]?.reviewComment || '—' }}
               </span>
 
               <div class="student-project-table__action-cell">

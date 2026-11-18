@@ -316,13 +316,30 @@ onMounted(loadPage)
           <span class="admin-participants-table__status">
             Участник
           </span>
-          <button
-            class="admin-participants-table__action admin-participants-table__action--exclude"
-            type="button"
-            title="Исключить"
-          >
-            Исключить
-          </button>
+          
+          <div class="admin-participants-table__actions">
+            <RouterLink
+              class="admin-participants-table__action admin-participants-table__action--works"
+              :to="{
+                name: 'admin-works',
+                query: {
+                  studentId: String(participant.studentId),
+                  projectId: String(participant.projectId),
+                },
+              }"
+            >
+              Работы
+            </RouterLink>
+
+            <button
+              class="admin-participants-table__action admin-participants-table__action--exclude"
+              type="button"
+              title="Исключить"
+            >
+              Исключить
+            </button>
+          </div>
+
         </div>
       </div>
     </main>

@@ -6,6 +6,8 @@ import { useRouter } from 'vue-router'
 import { http } from '../api/http'
 import AppLayout from '../components/AppLayout.vue'
 
+import {WORK_FILE_ACCEPT, validateWorkFiles} from '../utils/workFileValidation.ts'
+
 type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT'
 
 type WorkStatus =
@@ -28,6 +30,7 @@ interface ActiveProject {
 
 interface StudentWork {
   id: number
+  title: string
   projectId: number
   projectName: string
   studentId: number
@@ -56,7 +59,9 @@ const submitting = ref(false)
 
 const error = ref('')
 const submitError = ref('')
+const fileError = ref('')
 
+const workTitle = ref('')
 const workText = ref('')
 const selectedFiles = ref<File[]>([])
 
@@ -66,18 +71,16 @@ const statusLabels: Record<WorkStatus, string> = {
   ACCEPTED: 'Принята',
 }
 
-const hasWorkInActiveProject = computed(() => {
-  if (!activeProject.value) return false
-
-  return works.value.some(
-    (work) => work.projectId === activeProject.value?.id,
-  )
-})
-
 const canSubmit = computed(() => {
   return (
-    workText.value.trim().length > 0 ||
-    selectedFiles.value.some((file) => file.size > 0)
+    !fileError.value &&
+    validateWorkFiles(selectedFiles.value) === null &&
+    workTitle.value.trim().length > 0 &&
+    workTitle.value.trim().length <= 255 &&
+    (
+      workText.value.trim().length > 0 ||
+      selectedFiles.value.some((file) => file.size > 0)
+    )
   )
 })
 
@@ -100,17 +103,29 @@ function formatFileSize(bytes: number) {
 
   return `${(bytes / 1024 / 1024).toFixed(1)} МБ`
 }
-
 function handleFileChange(event: Event) {
   const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = ''
 
-  selectedFiles.value = Array.from(input.files ?? [])
+  const validationError = validateWorkFiles(files)
+
+  if (validationError) {
+    selectedFiles.value = []
+    fileError.value = validationError
+    return
+  }
+
+  selectedFiles.value = files
+  fileError.value = ''
 }
 
 function removeFile(index: number) {
   selectedFiles.value = selectedFiles.value.filter(
     (_, fileIndex) => fileIndex !== index,
   )
+
+  fileError.value = ''
 }
 
 async function loadPage() {
@@ -149,13 +164,20 @@ async function loadPage() {
   }
 }
 
+
 async function submitWork() {
   if (
     !activeProject.value ||
-    hasWorkInActiveProject.value ||
     !canSubmit.value ||
     submitting.value
   ) {
+    return
+  }
+
+  const validationError = validateWorkFiles(selectedFiles.value)
+
+  if (validationError) {
+    fileError.value = validationError
     return
   }
 
@@ -163,6 +185,8 @@ async function submitWork() {
   submitError.value = ''
 
   const formData = new FormData()
+
+  formData.append('Title', workTitle.value.trim())
 
   if (workText.value.trim()) {
     formData.append('Text', workText.value.trim())
@@ -182,15 +206,32 @@ async function submitWork() {
 
     await router.push(`/works/${data.id}`)
   } catch (err) {
-    if (isAxiosError(err) && err.response?.status === 409) {
-      submitError.value =
-        'Работа уже отправлена. Обновите страницу.'
-    } else if (
-      isAxiosError(err) &&
-      err.response?.status === 403
-    ) {
-      submitError.value =
-        'Отправлять работы могут только активные участники проекта.'
+    if (isAxiosError(err)) {
+      switch (err.response?.status) {
+        case 400:
+          submitError.value =
+            'Проверьте название, содержимое и формат прикреплённых файлов.'
+          break
+
+        case 403:
+          submitError.value =
+            'Отправлять работы могут только активные участники проекта.'
+          break
+
+        case 409:
+          submitError.value =
+            'Отправлять работы можно только в проект, находящийся в процессе выполнения.'
+          break
+
+        case 413:
+          submitError.value =
+            'Превышен допустимый размер загружаемых файлов.'
+          break
+
+        default:
+          submitError.value =
+            'Не удалось отправить работу. Попробуйте ещё раз.'
+      }
     } else {
       submitError.value =
         'Не удалось отправить работу. Попробуйте ещё раз.'
@@ -199,6 +240,7 @@ async function submitWork() {
     submitting.value = false
   }
 }
+
 
 async function logout() {
   localStorage.removeItem('accessToken')
@@ -259,6 +301,7 @@ onMounted(loadPage)
             class="student-works-table"
           >
             <div class="student-works-table__header">
+              <span>Название работы</span>
               <span>Проект</span>
               <span>Версия</span>
               <span>Дата отправки</span>
@@ -271,7 +314,11 @@ onMounted(loadPage)
               :key="work.id"
               class="student-works-table__row"
             >
-              <span class="student-works-table__name">
+               <span class="student-works-table__name">
+                {{ work.title }}
+              </span>
+
+              <span>
                 {{ work.projectName }}
               </span>
 
@@ -307,8 +354,9 @@ onMounted(loadPage)
         </section>
 
         <section
-          v-if="activeProject && !hasWorkInActiveProject"
+          v-if="activeProject"
           class="student-works-panel"
+          id="new-work"
         >
           <h2>Отправить работу</h2>
 
@@ -320,6 +368,21 @@ onMounted(loadPage)
             class="student-works-form"
             @submit.prevent="submitWork"
           >
+            <label for="student-work-title">Название работы</label>
+            <input
+              id="student-work-title"
+              v-model="workTitle"
+              type="text"
+              maxlength="255"
+              placeholder="Например: Отчёт №1 - ТЗ"
+              required
+              :disabled="submitting"
+            >
+
+            <p class="student-works-hint">
+              {{ workTitle.length }} / 255 символов
+            </p>
+
             <label for="student-work-text">
               Текст работы
             </label>
@@ -339,11 +402,25 @@ onMounted(loadPage)
             <label for="student-work-files">
               Прикреплённые файлы
             </label>
+            <p class="student-works-files-muted">
+              До 5 файлов, максимум 20 МБ на файл
+              и 50 МБ суммарно.
+              Форматы: PDF, DOC, DOCX, TXT, PNG, JPG, JPEG, ZIP.
+            </p>
 
+            <p
+              v-if="fileError"
+              class="student-works-error"
+              role="alert"
+            >
+              {{ fileError }}
+            </p>
             <input
               id="student-work-files"
               type="file"
               multiple
+              :accept="WORK_FILE_ACCEPT"
+              :disabled="submitting"
               @change="handleFileChange"
             >
 
