@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import { http } from '../api/http'
 import AppLayout from '../components/AppLayout.vue'
+import AdminLeaveApplicationsTab from '../components/AdminLeaveApplicationsTab.vue'
 
 type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT'
 
@@ -45,6 +46,7 @@ interface Project {
 }
 
 const router = useRouter()
+const activeTab = ref<'join' | 'leave'>('join')
 
 const currentUser = ref<CurrentUser | null>(null)
 
@@ -54,6 +56,8 @@ const projects = ref<Project[]>([])
 const loading = ref(true)
 const error = ref('')
 const processingId = ref<number | null>(null)
+const rejectionTarget = ref<Application | null>(null)
+const rejectionReason = ref('')
 
 const search = ref('')
 const selectedProject = ref('')
@@ -219,8 +223,25 @@ async function approveApplication(application: Application) {
   }
 }
 
-async function rejectApplication(application: Application) {
-  if (processingId.value !== null) {
+
+function openRejection(application: Application) {
+  if (processingId.value !== null) return
+
+  rejectionTarget.value = application
+  rejectionReason.value = ''
+  error.value = ''
+}
+
+async function rejectApplication() {
+  const application = rejectionTarget.value
+  const reason = rejectionReason.value.trim()
+
+  if (
+    !application ||
+    !reason ||
+    reason.length > 4000 ||
+    processingId.value !== null
+  ) {
     return
   }
 
@@ -232,10 +253,11 @@ async function rejectApplication(application: Application) {
 
     await http.post(
       `/admin/applications/${application.id}/reject`,
-      {
-        reason: null,
-      }
+      { reason },
     )
+
+    rejectionTarget.value = null
+    rejectionReason.value = ''
 
     await loadApplications()
   } catch {
@@ -244,6 +266,7 @@ async function rejectApplication(application: Application) {
     processingId.value = null
   }
 }
+
 
 async function loadApplications() {
   const { data } = await http.get<Application[]>(
@@ -299,6 +322,26 @@ onMounted(loadPage)
         </p>
       </header>
 
+      <div class="admin-applications-tabs">
+        <button
+          type="button"
+          class="admin-applications-tab"
+          :class="{ 'admin-applications-tab--active': activeTab === 'join' }"
+          @click="activeTab = 'join'"
+        >
+          На вступление
+        </button>
+
+        <button
+          type="button"
+          class="admin-applications-tab"
+          :class="{ 'admin-applications-tab--active': activeTab === 'leave' }"
+          @click="activeTab = 'leave'"
+        >
+          На выход
+        </button>
+      </div>
+      <template v-if="activeTab === 'join'">
       <div class="admin-applications-filters">
         <input
           v-model="search"
@@ -493,7 +536,7 @@ onMounted(loadPage)
                 "
                 type="button"
                 :disabled="processingId !== null"
-                @click="rejectApplication(application)"
+                @click="openRejection(application)"
               >
                 Отклонить
               </button>
@@ -522,6 +565,73 @@ onMounted(loadPage)
               Рассмотрена
             </span>
           </div>
+        </div>
+      </div>
+      </template>
+      <AdminLeaveApplicationsTab v-else />
+      <div
+        v-if="rejectionTarget"
+        class="admin-applications-modal-backdrop"
+      >
+        <div
+          class="admin-applications-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="join-reject-title"
+        >
+          <h2 id="join-reject-title">
+            Отклонение заявки на вступление
+          </h2>
+
+          <p>
+            Студент: {{ rejectionTarget.studentName }}
+          </p>
+
+          <p>
+            Проект: {{ rejectionTarget.projectName }}
+          </p>
+
+          <form @submit.prevent="rejectApplication">
+            <label for="join-rejection-reason">
+              Причина отклонения
+            </label>
+
+            <textarea
+              id="join-rejection-reason"
+              v-model="rejectionReason"
+              rows="4"
+              maxlength="4000"
+              required
+              :disabled="processingId !== null"
+              placeholder="Укажите причину отклонения заявки..."
+            />
+
+            <small>{{ rejectionReason.length }} / 4000</small>
+
+            <p v-if="error" role="alert">
+              {{ error }}
+            </p>
+
+            <div class="admin-applications-modal-actions">
+              <button
+                type="button"
+                :disabled="processingId !== null"
+                @click="rejectionTarget = null"
+              >
+                Отмена
+              </button>
+
+              <button
+                type="submit"
+                :disabled="
+                  processingId !== null ||
+                  !rejectionReason.trim()
+                "
+              >
+                Подтвердить отклонение
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </main>

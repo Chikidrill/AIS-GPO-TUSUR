@@ -304,10 +304,20 @@ onMounted(loadPage)
                     {{ getProject(application.projectId)?.code ?? '—' }}
                     </span>
 
-                    <span class="applications-table__name">
-                    {{ application.projectName }}
-                    </span>
+                   <span class="applications-table__name">
+                      {{ application.projectName }}
 
+                      <small
+                        v-if="
+                          application.status === 'REJECTED' &&
+                          application.rejectionReason
+                        "
+                        class="applications-rejection-reason"
+                      >
+                        Причина отклонения:
+                        {{ application.rejectionReason }}
+                      </small>
+                    </span>
                     <span>
                     {{ getProject(application.projectId)?.faculty ?? '—' }}
                     </span>
@@ -362,4 +372,12 @@ onMounted(loadPage)
 <style
     scoped
     src="../styles/pages/applications.css"
-></style>
+    
+>
+.applications-rejection-reason {
+  display: block;
+  margin-top: 6px;
+  color: #b83838;
+  font-size: 10px;
+  line-height: 1.5;
+}</style>

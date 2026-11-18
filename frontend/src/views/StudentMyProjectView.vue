@@ -62,6 +62,30 @@ interface WorkDetails {
   revisions: WorkRevision[]
 }
 
+
+
+type LeaveRequestStatus =
+  | 'CREATED'
+  | 'UNDER_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED'
+
+interface ProjectLeaveRequest {
+  id: number
+  studentId: number
+  studentName: string
+  projectId: number
+  projectName: string
+  status: LeaveRequestStatus
+  reason: string | null
+  createdAt: string
+  takenForReviewAt: string | null
+  reviewedAt: string | null
+  rejectionReason: string | null
+}
+
+
 const router = useRouter()
 
 const currentUser = ref<CurrentUser | null>(null)
@@ -75,6 +99,37 @@ const latestRevisions = ref<
 const loading = ref(true)
 const error = ref('')
 const noProject = ref(false)
+
+
+const leaveRequests = ref<ProjectLeaveRequest[]>([])
+const leaveError = ref('')
+const leaveBusy = ref(false)
+const cancellingLeaveId = ref<number | null>(null)
+
+const showLeaveModal = ref(false)
+const leaveReason = ref('')
+
+const leaveStatusLabels: Record<LeaveRequestStatus, string> = {
+  CREATED: 'Ожидает рассмотрения',
+  UNDER_REVIEW: 'На рассмотрении',
+  APPROVED: 'Одобрена',
+  REJECTED: 'Отклонена',
+  CANCELLED: 'Отменена',
+}
+
+const activeLeaveRequest = computed(() => {
+  if (!myProject.value) return null
+
+  return leaveRequests.value.find(
+    (request) =>
+      request.projectId === myProject.value?.id &&
+      (
+        request.status === 'CREATED' ||
+        request.status === 'UNDER_REVIEW'
+      ),
+  ) ?? null
+})
+
 
 const statusLabels: Record<WorkStatus, string> = {
   SUBMITTED: 'На проверке',
@@ -103,36 +158,46 @@ function formatDate(value: string) {
 async function loadPage() {
   loading.value = true
   error.value = ''
+  leaveError.value = ''
   noProject.value = false
   latestRevisions.value = {}
   projectDetails.value = null
 
   try {
-    const [userResponse, worksResponse, project] =
-      await Promise.all([
-        http.get<CurrentUser>('/me'),
-        http.get<StudentWork[]>('/me/works'),
+    const [
+      userResponse,
+      worksResponse,
+      project,
+      leaveResponse,
+    ] = await Promise.all([
+      http.get<CurrentUser>('/me'),
 
-        http
-          .get<MyProject>('/me/project')
-          .then((response) => response.data)
-          .catch((err: unknown) => {
-            if (
-              isAxiosError(err) &&
-              err.response?.status === 404 &&
-              err.response.data?.code === 'ACTIVE_PROJECT_NOT_FOUND'
-            ) {
-              return null
-            }
+      http.get<StudentWork[]>('/me/works'),
 
-            throw err
-          }),
-      ])
+      http
+        .get<MyProject>('/me/project')
+        .then((response) => response.data)
+        .catch((err: unknown) => {
+          if (
+            isAxiosError(err) &&
+            err.response?.status === 404 &&
+            err.response.data?.code === 'ACTIVE_PROJECT_NOT_FOUND'
+          ) {
+            return null
+          }
+
+          throw err
+        }),
+
+      http.get<ProjectLeaveRequest[]>(
+        '/me/project/leave-requests',
+      ),
+    ])
 
     currentUser.value = userResponse.data
     works.value = worksResponse.data
     myProject.value = project
-
+    leaveRequests.value = leaveResponse.data
     if (!project) {
       noProject.value = true
       return
@@ -174,6 +239,89 @@ async function loadPage() {
     error.value = 'Не удалось загрузить данные проекта.'
   } finally {
     loading.value = false
+  }
+}
+
+
+async function createLeaveRequest() {
+  if (
+    !myProject.value ||
+    activeLeaveRequest.value ||
+    leaveBusy.value ||
+    leaveReason.value.length > 4000
+  ) {
+    return
+  }
+
+  leaveBusy.value = true
+  leaveError.value = ''
+
+  try {
+    const { data } = await http.post<ProjectLeaveRequest>(
+      '/me/project/leave-requests',
+      {
+        reason: leaveReason.value.trim() || null,
+      },
+    )
+
+    leaveRequests.value = [
+      data,
+      ...leaveRequests.value,
+    ]
+
+    showLeaveModal.value = false
+    leaveReason.value = ''
+  } catch (err) {
+    if (isAxiosError(err) && err.response?.status === 409) {
+      leaveError.value =
+        err.response.data?.code === 'LEAVE_REQUEST_ALREADY_EXISTS'
+          ? 'У вас уже есть активная заявка на выход.'
+          : 'Создание заявки сейчас недоступно. Обновите страницу.'
+    } else {
+      leaveError.value = 'Не удалось отправить заявку.'
+    }
+  } finally {
+    leaveBusy.value = false
+  }
+}
+
+async function cancelLeaveRequest(
+  request: ProjectLeaveRequest,
+) {
+  if (cancellingLeaveId.value !== null) return
+
+  if (!window.confirm('Отменить заявку на выход из проекта?')) {
+    return
+  }
+
+  cancellingLeaveId.value = request.id
+  leaveError.value = ''
+
+  try {
+    await http.delete(
+      `/me/project/leave-requests/${request.id}`,
+    )
+
+    const { data } = await http.get<ProjectLeaveRequest[]>(
+      '/me/project/leave-requests',
+    )
+
+    leaveRequests.value = data
+  } catch {
+    leaveError.value =
+      'Не удалось отменить заявку. Возможно, её статус уже изменился.'
+
+    // Обновляем состояние после конфликта с сервером.
+    try {
+      const { data } = await http.get<ProjectLeaveRequest[]>(
+        '/me/project/leave-requests',
+      )
+      leaveRequests.value = data
+    } catch {
+      // Основную ошибку оставляем на экране.
+    }
+  } finally {
+    cancellingLeaveId.value = null
   }
 }
 
@@ -304,6 +452,24 @@ onMounted(loadPage)
             >
               Посмотреть участников
             </a>
+
+            <button
+              v-if="!activeLeaveRequest"
+              type="button"
+              class="student-project-button student-project-button--danger"
+              @click="
+                leaveError = '';
+                showLeaveModal = true
+              "
+            >
+              Подать заявку на выход
+            </button>
+
+            <p v-else class="student-project-muted">
+              Заявка на выход:
+              {{ leaveStatusLabels[activeLeaveRequest.status] }}
+            </p>
+
           </section>
         </div>
 
@@ -409,6 +575,135 @@ onMounted(loadPage)
           </div>
         </section>
       </template>
+
+<section
+  v-if="!loading && !error && leaveRequests.length > 0"
+  class="student-project-card student-project-leave-history"
+>
+  <h2>Заявки на выход из проекта</h2>
+
+  <div
+    v-for="request in leaveRequests"
+    :key="request.id"
+    class="student-project-leave-item"
+  >
+    <div class="student-project-leave-heading">
+      <strong>{{ request.projectName }}</strong>
+      <span>{{ leaveStatusLabels[request.status] }}</span>
+    </div>
+
+    <p class="student-project-muted">
+      Подана: {{ formatDate(request.createdAt) }}
+    </p>
+
+    <p v-if="request.reason">
+      <strong>Причина выхода:</strong>
+      {{ request.reason }}
+    </p>
+
+    <p
+      v-if="request.status === 'REJECTED' && request.rejectionReason"
+    >
+      <strong>Причина отклонения:</strong>
+      {{ request.rejectionReason }}
+    </p>
+
+    <button
+      v-if="
+        request.status === 'CREATED' ||
+        request.status === 'UNDER_REVIEW'
+      "
+      class="student-project-button"
+      type="button"
+      :disabled="cancellingLeaveId !== null"
+      @click="cancelLeaveRequest(request)"
+    >
+      {{
+        cancellingLeaveId === request.id
+          ? 'Отмена...'
+          : 'Отменить заявку'
+      }}
+    </button>
+  </div>
+</section>
+
+      <p
+        v-if="leaveError && !showLeaveModal"
+        class="student-project-state student-project-state--error"
+        role="alert"
+      >
+        {{ leaveError }}
+      </p>
+
+<div
+  v-if="showLeaveModal && myProject"
+  class="student-project-modal-overlay"
+>
+  <div
+    class="student-project-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="leave-modal-title"
+  >
+    <h2 id="leave-modal-title">
+      Заявка на выход из проекта
+    </h2>
+
+    <p class="student-project-muted">
+      Вы хотите выйти из проекта
+      «{{ myProject.name }}».
+      До одобрения заявки администратором
+      вы останетесь участником проекта.
+    </p>
+
+    <form @submit.prevent="createLeaveRequest">
+      <label for="student-leave-reason">
+        Причина выхода (необязательно)
+      </label>
+
+      <textarea
+        id="student-leave-reason"
+        v-model="leaveReason"
+        rows="5"
+        maxlength="4000"
+        :disabled="leaveBusy"
+        placeholder="Укажите причину выхода из проекта..."
+      />
+
+      <p class="student-project-muted">
+        {{ leaveReason.length }} / 4000 символов
+      </p>
+
+      <p
+        v-if="leaveError"
+        class="student-project-state student-project-state--error"
+        role="alert"
+      >
+        {{ leaveError }}
+      </p>
+
+      <div class="student-project-modal-actions">
+              <button
+                type="button"
+                class="student-project-button"
+                :disabled="leaveBusy"
+                @click="showLeaveModal = false"
+              >
+                Отмена
+              </button>
+
+              <button
+                type="submit"
+                class="student-project-button student-project-button--danger"
+                :disabled="leaveBusy"
+              >
+                {{ leaveBusy ? 'Отправка...' : 'Подать заявку' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
     </main>
   </AppLayout>
 </template>

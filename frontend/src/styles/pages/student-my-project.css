@@ -291,3 +291,100 @@
   font-size: 10px;
   font-weight: 400;
 }
+
+
+.student-project-button--danger {
+  border-color: #b83838;
+  color: #b83838;
+  background: #fff;
+}
+
+.student-project-button--danger:hover {
+  background: #fff1f1;
+}
+
+.student-project-leave-history {
+  margin-top: 24px;
+}
+
+.student-project-leave-item {
+  padding: 16px 0;
+  border-top: 1px solid #ebedf2;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.student-project-leave-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.student-project-leave-heading span {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.student-project-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.student-project-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.student-project-modal h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
+
+.student-project-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.student-project-modal label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.student-project-modal textarea {
+  width: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.student-project-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.student-project-modal button:disabled,
+.student-project-leave-item button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
