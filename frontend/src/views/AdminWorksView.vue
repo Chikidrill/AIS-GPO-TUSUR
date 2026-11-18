@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { http } from '../api/http'
 import AppLayout from '../components/AppLayout.vue'
+
 
 type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT'
 type WorkStatus = 'SUBMITTED' | 'NEEDS_REVISION' | 'ACCEPTED'
@@ -31,6 +32,17 @@ interface StudentWork {
 
 const router = useRouter()
 
+const route = useRoute()
+
+const studentIdFilter = computed(() => {
+  const raw = route.query.studentId
+  const id = typeof raw === 'string' ? Number(raw) : NaN
+
+  return Number.isSafeInteger(id) && id > 0
+    ? id
+    : null
+})
+
 const currentUser = ref<CurrentUser | null>(null)
 const works = ref<StudentWork[]>([])
 
@@ -38,7 +50,12 @@ const loading = ref(true)
 const error = ref('')
 
 const search = ref('')
-const selectedProject = ref('')
+const selectedProject = ref(
+  typeof route.query.projectId === 'string' &&
+  /^\d+$/.test(route.query.projectId)
+    ? route.query.projectId
+    : '',
+)
 const selectedStatus = ref('')
 
 const statusLabels: Record<WorkStatus, string> = {
@@ -77,8 +94,15 @@ const filteredWorks = computed(() => {
     const matchesStatus =
       !selectedStatus.value ||
       work.status === selectedStatus.value
-
-    return matchesSearch && matchesProject && matchesStatus
+    const matchesStudent =
+      studentIdFilter.value === null ||
+      work.studentId === studentIdFilter.value
+    return (
+      matchesSearch &&
+      matchesProject &&
+      matchesStatus &&
+      matchesStudent
+    )
   })
 })
 
@@ -88,6 +112,14 @@ function formatDate(value: string) {
     month: '2-digit',
     year: 'numeric',
   }).format(new Date(value))
+}
+
+async function clearStudentFilter() {
+  selectedProject.value = ''
+  selectedStatus.value = ''
+  search.value = ''
+
+  await router.replace({ name: 'admin-works' })
 }
 
 async function loadPage() {
@@ -129,7 +161,21 @@ onMounted(loadPage)
         <h1>Работы студентов</h1>
         <p>Просмотр результатов работы студентов по всем проектам ГПО.</p>
       </header>
+      <div
+        v-if="studentIdFilter !== null"
+        class="admin-works-context"
+      >
+        <span>
+          Показаны работы выбранного участника.
+        </span>
 
+        <button
+          type="button"
+          @click="clearStudentFilter"
+        >
+          Показать все работы
+        </button>
+      </div>
       <div class="admin-works-filters">
         <input
           v-model="search"

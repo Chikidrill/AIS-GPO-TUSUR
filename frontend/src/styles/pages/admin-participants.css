@@ -120,7 +120,7 @@
   120px
   100px
   120px
-  120px;
+  210px;
 
   padding: 0 16px;
 }
@@ -259,4 +259,20 @@
 .admin-participants-table__action--exclude:disabled {
   opacity: 0.75;
   cursor: not-allowed;
+}
+
+.admin-participants-table {
+  overflow-x: auto;
+}
+
+.admin-participants-table__actions {
+  gap: 8px;
+}
+
+.admin-participants-table__action--works {
+  border: 1px solid var(--color-primary);
+  background: #fff;
+  color: var(--color-primary);
+  text-decoration: none;
+  box-sizing: border-box;
 }
