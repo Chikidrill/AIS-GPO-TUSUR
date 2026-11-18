@@ -1,14 +1,14 @@
-using Xunit;
+п»їusing Xunit;
 
 namespace AisGpo.Api.IntegrationTests;
 
 /// <summary>
-/// Все integration tests используют
-/// один API host и один PostgreSQL-контейнер.
+/// Р’СЃРµ integration tests РёСЃРїРѕР»СЊР·СѓСЋС‚
+/// РѕРґРёРЅ API host Рё РѕРґРёРЅ PostgreSQL-РєРѕРЅС‚РµР№РЅРµСЂ.
 ///
-/// Последовательное выполнение необходимо,
-/// потому что environment variables являются
-/// глобальными для тестового процесса.
+/// РџРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕРµ РІС‹РїРѕР»РЅРµРЅРёРµ РЅРµРѕР±С…РѕРґРёРјРѕ,
+/// РїРѕС‚РѕРјСѓ С‡С‚Рѕ environment variables СЏРІР»СЏСЋС‚СЃСЏ
+/// РіР»РѕР±Р°Р»СЊРЅС‹РјРё РґР»СЏ С‚РµСЃС‚РѕРІРѕРіРѕ РїСЂРѕС†РµСЃСЃР°.
 /// </summary>
 [CollectionDefinition(
     Name,

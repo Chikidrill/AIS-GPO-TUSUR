@@ -1,12 +1,12 @@
-using System.Net;
+п»їusing System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
 namespace AisGpo.Api.IntegrationTests;
 
 /// <summary>
-/// Проверяет базовую работоспособность
-/// integration-test инфраструктуры.
+/// РџСЂРѕРІРµСЂСЏРµС‚ Р±Р°Р·РѕРІСѓСЋ СЂР°Р±РѕС‚РѕСЃРїРѕСЃРѕР±РЅРѕСЃС‚СЊ
+/// integration-test РёРЅС„СЂР°СЃС‚СЂСѓРєС‚СѓСЂС‹.
 /// </summary>
 [Collection(IntegrationTestCollection.Name)]
 public sealed class InfrastructureSmokeTests
@@ -24,10 +24,10 @@ public sealed class InfrastructureSmokeTests
     }
 
     /// <summary>
-    /// Если приложение реально запустилось,
-    /// PostgreSQL доступен и migrations применились,
-    /// защищённый endpoint должен вернуть 401,
-    /// а не ошибку запуска приложения.
+    /// Р•СЃР»Рё РїСЂРёР»РѕР¶РµРЅРёРµ СЂРµР°Р»СЊРЅРѕ Р·Р°РїСѓСЃС‚РёР»РѕСЃСЊ,
+    /// PostgreSQL РґРѕСЃС‚СѓРїРµРЅ Рё migrations РїСЂРёРјРµРЅРёР»РёСЃСЊ,
+    /// Р·Р°С‰РёС‰С‘РЅРЅС‹Р№ endpoint РґРѕР»Р¶РµРЅ РІРµСЂРЅСѓС‚СЊ 401,
+    /// Р° РЅРµ РѕС€РёР±РєСѓ Р·Р°РїСѓСЃРєР° РїСЂРёР»РѕР¶РµРЅРёСЏ.
     /// </summary>
     [Fact]
     public async Task Projects_WithoutToken_ReturnsUnauthorized()

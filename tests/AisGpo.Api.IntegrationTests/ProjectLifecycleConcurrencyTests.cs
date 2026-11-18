@@ -1,4 +1,4 @@
-using System.Net;
+п»їusing System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AisGpo.Api.Data;
@@ -10,8 +10,8 @@ using Xunit;
 namespace AisGpo.Api.IntegrationTests;
 
 /// <summary>
-/// Проверяет конкурентные операции
-/// жизненного цикла проекта.
+/// РџСЂРѕРІРµСЂСЏРµС‚ РєРѕРЅРєСѓСЂРµРЅС‚РЅС‹Рµ РѕРїРµСЂР°С†РёРё
+/// Р¶РёР·РЅРµРЅРЅРѕРіРѕ С†РёРєР»Р° РїСЂРѕРµРєС‚Р°.
 /// </summary>
 [Collection(IntegrationTestCollection.Name)]
 public sealed class ProjectLifecycleConcurrencyTests
@@ -25,10 +25,10 @@ public sealed class ProjectLifecycleConcurrencyTests
     }
 
     /// <summary>
-    /// Одновременный запуск OPEN-проекта
-    /// и снятие его руководителя
-    /// никогда не должны приводить
-    /// к состоянию:
+    /// РћРґРЅРѕРІСЂРµРјРµРЅРЅС‹Р№ Р·Р°РїСѓСЃРє OPEN-РїСЂРѕРµРєС‚Р°
+    /// Рё СЃРЅСЏС‚РёРµ РµРіРѕ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ
+    /// РЅРёРєРѕРіРґР° РЅРµ РґРѕР»Р¶РЅС‹ РїСЂРёРІРѕРґРёС‚СЊ
+    /// Рє СЃРѕСЃС‚РѕСЏРЅРёСЋ:
     ///
     /// IN_PROGRESS + SupervisorId == null.
     /// </summary>
@@ -169,11 +169,11 @@ public sealed class ProjectLifecycleConcurrencyTests
 
         foreach (var projectId in projectIds)
         {
-            // Оба запроса запускаются без ожидания
-            // завершения первого.
+            // РћР±Р° Р·Р°РїСЂРѕСЃР° Р·Р°РїСѓСЃРєР°СЋС‚СЃСЏ Р±РµР· РѕР¶РёРґР°РЅРёСЏ
+            // Р·Р°РІРµСЂС€РµРЅРёСЏ РїРµСЂРІРѕРіРѕ.
             //
-            // Таким образом они конкурируют
-            // за одну строку projects.
+            // РўР°РєРёРј РѕР±СЂР°Р·РѕРј РѕРЅРё РєРѕРЅРєСѓСЂРёСЂСѓСЋС‚
+            // Р·Р° РѕРґРЅСѓ СЃС‚СЂРѕРєСѓ projects.
             var statusTask =
                 statusClient.PatchAsJsonAsync(
                     $"/api/v1/projects/{projectId}/status",
@@ -209,8 +209,8 @@ public sealed class ProjectLifecycleConcurrencyTests
                     supervisorResponse.StatusCode
                 };
 
-            // Ровно одна операция должна пройти,
-            // а вторая должна получить бизнес-конфликт.
+            // Р РѕРІРЅРѕ РѕРґРЅР° РѕРїРµСЂР°С†РёСЏ РґРѕР»Р¶РЅР° РїСЂРѕР№С‚Рё,
+            // Р° РІС‚РѕСЂР°СЏ РґРѕР»Р¶РЅР° РїРѕР»СѓС‡РёС‚СЊ Р±РёР·РЅРµСЃ-РєРѕРЅС„Р»РёРєС‚.
             Assert.Equal(
                 1,
                 statusCodes.Count(
@@ -265,15 +265,15 @@ public sealed class ProjectLifecycleConcurrencyTests
                     .SingleAsync(
                         x => x.Id == projectId);
 
-            // Главный инвариант.
+            // Р“Р»Р°РІРЅС‹Р№ РёРЅРІР°СЂРёР°РЅС‚.
             Assert.False(
                 persistedProject.Status ==
                     ProjectStatus.IN_PROGRESS &&
                 persistedProject.SupervisorId is null,
                 "Project must never be IN_PROGRESS without a supervisor.");
 
-            // Если первым выиграл запуск проекта,
-            // снятие руководителя должно быть отклонено.
+            // Р•СЃР»Рё РїРµСЂРІС‹Рј РІС‹РёРіСЂР°Р» Р·Р°РїСѓСЃРє РїСЂРѕРµРєС‚Р°,
+            // СЃРЅСЏС‚РёРµ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РѕС‚РєР»РѕРЅРµРЅРѕ.
             if (statusResponse.StatusCode ==
                 HttpStatusCode.OK)
             {
@@ -291,8 +291,8 @@ public sealed class ProjectLifecycleConcurrencyTests
             }
             else
             {
-                // Если первым выиграло снятие руководителя,
-                // последующий запуск должен быть отклонён.
+                // Р•СЃР»Рё РїРµСЂРІС‹Рј РІС‹РёРіСЂР°Р»Рѕ СЃРЅСЏС‚РёРµ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ,
+                // РїРѕСЃР»РµРґСѓСЋС‰РёР№ Р·Р°РїСѓСЃРє РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РѕС‚РєР»РѕРЅС‘РЅ.
                 Assert.Equal(
                     ProjectStatus.OPEN,
                     persistedProject.Status);

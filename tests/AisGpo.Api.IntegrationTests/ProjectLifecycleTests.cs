@@ -1,4 +1,4 @@
-using System.Net;
+п»їusing System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AisGpo.Api.Data;
@@ -11,7 +11,7 @@ using AisGpo.Api.Domain.Works;
 namespace AisGpo.Api.IntegrationTests;
 
 /// <summary>
-/// Интеграционные тесты жизненного цикла проекта.
+/// РРЅС‚РµРіСЂР°С†РёРѕРЅРЅС‹Рµ С‚РµСЃС‚С‹ Р¶РёР·РЅРµРЅРЅРѕРіРѕ С†РёРєР»Р° РїСЂРѕРµРєС‚Р°.
 /// </summary>
 [Collection(IntegrationTestCollection.Name)]
 public sealed class ProjectLifecycleTests
@@ -25,8 +25,8 @@ public sealed class ProjectLifecycleTests
     }
 
     /// <summary>
-    /// OPEN-проект без руководителя
-    /// нельзя перевести в IN_PROGRESS.
+    /// OPEN-РїСЂРѕРµРєС‚ Р±РµР· СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ
+    /// РЅРµР»СЊР·СЏ РїРµСЂРµРІРµСЃС‚Рё РІ IN_PROGRESS.
     /// </summary>
     [Fact]
     public async Task StartProject_WithoutSupervisor_ReturnsConflict()
@@ -161,8 +161,8 @@ public sealed class ProjectLifecycleTests
             persistedProject.SupervisorId);
     }
     /// <summary>
-    /// У IN_PROGRESS-проекта нельзя полностью
-    /// снять назначенного руководителя.
+    /// РЈ IN_PROGRESS-РїСЂРѕРµРєС‚Р° РЅРµР»СЊР·СЏ РїРѕР»РЅРѕСЃС‚СЊСЋ
+    /// СЃРЅСЏС‚СЊ РЅР°Р·РЅР°С‡РµРЅРЅРѕРіРѕ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ.
     /// </summary>
     [Fact]
     public async Task RemoveSupervisor_FromInProgressProject_ReturnsConflict()
@@ -330,8 +330,8 @@ public sealed class ProjectLifecycleTests
             persistedProject.SupervisorId);
     }
     /// <summary>
-    /// OPEN-проект с назначенным руководителем
-    /// успешно переводится в IN_PROGRESS.
+    /// OPEN-РїСЂРѕРµРєС‚ СЃ РЅР°Р·РЅР°С‡РµРЅРЅС‹Рј СЂСѓРєРѕРІРѕРґРёС‚РµР»РµРј
+    /// СѓСЃРїРµС€РЅРѕ РїРµСЂРµРІРѕРґРёС‚СЃСЏ РІ IN_PROGRESS.
     /// </summary>
     [Fact]
     public async Task StartProject_WithSupervisor_ChangesStatusToInProgress()
@@ -487,8 +487,8 @@ public sealed class ProjectLifecycleTests
             persistedProject.SupervisorId);
     }
     /// <summary>
-    /// IN_PROGRESS-проект нельзя завершить,
-    /// пока существует SUBMITTED-работа.
+    /// IN_PROGRESS-РїСЂРѕРµРєС‚ РЅРµР»СЊР·СЏ Р·Р°РІРµСЂС€РёС‚СЊ,
+    /// РїРѕРєР° СЃСѓС‰РµСЃС‚РІСѓРµС‚ SUBMITTED-СЂР°Р±РѕС‚Р°.
     /// </summary>
     [Fact]
     public async Task CompleteProject_WithSubmittedWork_ReturnsConflict()
@@ -713,9 +713,9 @@ public sealed class ProjectLifecycleTests
             persistedWork.Status);
     }
     /// <summary>
-    /// При успешном завершении проекта
-    /// активное участие завершается,
-    /// а незавершённая заявка на выход отменяется.
+    /// РџСЂРё СѓСЃРїРµС€РЅРѕРј Р·Р°РІРµСЂС€РµРЅРёРё РїСЂРѕРµРєС‚Р°
+    /// Р°РєС‚РёРІРЅРѕРµ СѓС‡Р°СЃС‚РёРµ Р·Р°РІРµСЂС€Р°РµС‚СЃСЏ,
+    /// Р° РЅРµР·Р°РІРµСЂС€С‘РЅРЅР°СЏ Р·Р°СЏРІРєР° РЅР° РІС‹С…РѕРґ РѕС‚РјРµРЅСЏРµС‚СЃСЏ.
     /// </summary>
     [Fact]
     public async Task CompleteProject_FinishesMembership_AndCancelsLeaveRequest()
@@ -966,9 +966,9 @@ public sealed class ProjectLifecycleTests
             persistedLeaveRequest.Status);
     }
     /// <summary>
-    /// При запуске OPEN-проекта
-    /// незавершённая заявка на участие
-    /// автоматически отменяется.
+    /// РџСЂРё Р·Р°РїСѓСЃРєРµ OPEN-РїСЂРѕРµРєС‚Р°
+    /// РЅРµР·Р°РІРµСЂС€С‘РЅРЅР°СЏ Р·Р°СЏРІРєР° РЅР° СѓС‡Р°СЃС‚РёРµ
+    /// Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РѕС‚РјРµРЅСЏРµС‚СЃСЏ.
     /// </summary>
     [Fact]
     public async Task StartProject_CancelsPendingParticipationApplication()

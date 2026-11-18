@@ -1,4 +1,4 @@
-using System.Net;
+п»їusing System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AisGpo.Api.Data;
@@ -22,8 +22,8 @@ public sealed class WorkReviewTests
     }
 
     /// <summary>
-    /// Преподаватель не может принять работу,
-    /// если проект уже не находится в IN_PROGRESS.
+    /// РџСЂРµРїРѕРґР°РІР°С‚РµР»СЊ РЅРµ РјРѕР¶РµС‚ РїСЂРёРЅСЏС‚СЊ СЂР°Р±РѕС‚Сѓ,
+    /// РµСЃР»Рё РїСЂРѕРµРєС‚ СѓР¶Рµ РЅРµ РЅР°С…РѕРґРёС‚СЃСЏ РІ IN_PROGRESS.
     /// </summary>
     [Fact]
     public async Task AcceptWork_WhenProjectIsArchived_ReturnsConflict()
